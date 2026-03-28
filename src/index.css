@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold-primary: #D4AF37;
+  --color-gold-light: #F9E29C;
+  --color-gold-dark: #996515;
+  --color-black-deep: #0A0A0A;
+  --color-black-matte: #1A1A1A;
+}
+
+@layer base {
+  body {
+    @apply bg-black-deep text-white antialiased overflow-hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+  
+  .gold-gradient-text {
+    @apply bg-gradient-to-b from-gold-light via-gold-primary to-gold-dark bg-clip-text text-transparent font-bold;
+  }
+
+  .gold-border-glow {
+    position: relative;
+    border-radius: 1rem;
+    background: linear-gradient(var(--color-black-matte), var(--color-black-matte)) padding-box,
+                linear-gradient(45deg, var(--color-gold-dark), var(--color-gold-light), var(--color-gold-dark)) border-box;
+    border: 2px solid transparent;
+    animation: borderRotate 4s linear infinite;
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(212, 175, 55, 0) 0%,
+      rgba(212, 175, 55, 0.2) 50%,
+      rgba(212, 175, 55, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite;
+  }
+}
+
+@keyframes borderRotate {
+  0% { border-image-source: linear-gradient(0deg, var(--color-gold-dark), var(--color-gold-light), var(--color-gold-dark)); }
+  100% { border-image-source: linear-gradient(360deg, var(--color-gold-dark), var(--color-gold-light), var(--color-gold-dark)); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* TikTok style scroll container */
+.snap-container {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100vh;
+  scrollbar-width: none;
+}
+
+.snap-container::-webkit-scrollbar {
+  display: none;
+}
+
+.snap-item {
+  scroll-snap-align: start;
+  height: 100vh;
+  width: 100%;
+}

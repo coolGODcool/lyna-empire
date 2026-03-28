@@ -1,19 +1,43 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  Home, 
-  User, 
   Plus, 
-  Bell, 
-  MessageSquare, 
   Crown, 
   Utensils, 
   Target,
-  Zap
+  Zap,
+  Scroll,
+  Club,
+  MessageSquare
 } from "lucide-react";
 import Butler from "./components/Butler";
 import Quests from "./components/Quests";
 import Lounge from "./components/Lounge";
+
+// Custom "L" Icon for Home
+function LynaLIcon({ active }: { active: boolean }) {
+  return (
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark border-2 border-white/20 shadow-[0_0_15px_rgba(212,175,55,0.6)]' : 'border-2 border-gold-primary/30'}`}>
+      <span className={`text-xl font-black italic tracking-tighter ${active ? 'text-black' : 'gold-gradient-text'}`}>L</span>
+    </div>
+  );
+}
+
+// Custom AI Butler Icon
+function ButlerIcon({ active }: { active: boolean }) {
+  return (
+    <div className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all duration-300 ${active ? 'border-gold-primary breathing-gold' : 'border-gold-primary/30'}`}>
+      <img 
+        src="/IMG_4166.PNG" 
+        alt="Butler" 
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = "https://picsum.photos/seed/butler/100/100";
+        }}
+      />
+    </div>
+  );
+}
 
 // Types
 type Tab = "home" | "butler" | "plus" | "announcements" | "lounge";
@@ -232,18 +256,34 @@ export default function App() {
       {/* Navigation Bar */}
       <nav className="fixed bottom-0 left-0 w-full z-50 px-6 py-6 bg-gradient-to-t from-black to-transparent">
         <div className="glass-card flex justify-between items-center px-6 py-3 border-gold-primary/20">
-          <NavIcon icon={<Home />} active={activeTab === "home"} onClick={() => setActiveTab("home")} />
-          <NavIcon icon={<User />} active={activeTab === "butler"} onClick={() => setActiveTab("butler")} />
+          <NavIcon 
+            icon={<LynaLIcon active={activeTab === "home"} />} 
+            active={activeTab === "home"} 
+            onClick={() => setActiveTab("home")} 
+          />
+          <NavIcon 
+            icon={<ButlerIcon active={activeTab === "butler"} />} 
+            active={activeTab === "butler"} 
+            onClick={() => setActiveTab("butler")} 
+          />
           <div className="relative -top-8">
             <button 
               onClick={() => setActiveTab("plus")}
-              className="w-14 h-14 rounded-full bg-gold-primary text-black flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:scale-110 transition-transform"
+              className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark text-black flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
             >
-              <Plus size={32} strokeWidth={3} />
+              <Plus size={36} strokeWidth={3} />
             </button>
           </div>
-          <NavIcon icon={<Bell />} active={activeTab === "announcements"} onClick={() => setActiveTab("announcements")} />
-          <NavIcon icon={<MessageSquare />} active={activeTab === "lounge"} onClick={() => setActiveTab("lounge")} />
+          <NavIcon 
+            icon={<Scroll className={activeTab === "announcements" ? "text-gold-light" : "text-gold-primary/60"} />} 
+            active={activeTab === "announcements"} 
+            onClick={() => setActiveTab("announcements")} 
+          />
+          <NavIcon 
+            icon={<Club className={activeTab === "lounge" ? "text-gold-light" : "text-gold-primary/60"} />} 
+            active={activeTab === "lounge"} 
+            onClick={() => setActiveTab("lounge")} 
+          />
         </div>
       </nav>
     </div>
@@ -254,7 +294,7 @@ function NavIcon({ icon, active, onClick }: { icon: React.ReactNode, active: boo
   return (
     <button 
       onClick={onClick}
-      className={`p-2 transition-all duration-300 ${active ? 'text-gold-primary scale-125' : 'text-gray-500 hover:text-gray-300'}`}
+      className={`p-1 transition-all duration-300 ${active ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
     >
       {icon}
     </button>

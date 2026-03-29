@@ -124,7 +124,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative h-screen w-full bg-black-deep overflow-hidden">
+    <div className="relative h-[100dvh] w-full bg-black-deep overflow-hidden">
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
         <div className="flex items-center gap-2">

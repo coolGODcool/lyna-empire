@@ -163,14 +163,28 @@ export default function App() {
   const [longPressActive, setLongPressActive] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [orderForGirlfriend, setOrderForGirlfriend] = useState(false);
+  const [isShopRedirect, setIsShopRedirect] = useState(false);
   
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Remove fetchStores to ensure hard-coded data is used immediately
+  // URL shopId 穿透邏輯
   useEffect(() => {
-    // Data is already initialized in useState
+    const params = new URLSearchParams(window.location.search);
+    const shopId = params.get('shopId');
+    if (shopId) {
+      // 模擬加載對應店家的菜單
+      // 在此範例中，我們假設 shopId 對應到 stores 中的某個 ID，或者直接彈出通用菜單
+      const store = stores.find(s => s.id === shopId) || stores[0];
+      setSelectedStore(store);
+      setIsShopRedirect(true);
+      
+      // 延遲彈出，確保加載感
+      setTimeout(() => {
+        setShowOrderPanel(true);
+      }, 1500);
+    }
   }, []);
 
   const handleInteractionStart = (store: Store) => {

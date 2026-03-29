@@ -7,23 +7,23 @@ import {
   Target,
   Zap,
   Scroll,
-  Club,
+  TrendingUp,
   MessageSquare
 } from "lucide-react";
 import Butler from "./components/Butler";
 import Quests from "./components/Quests";
 import Lounge from "./components/Lounge";
 
-// Custom "L" Icon for Home
+// RPG 公告欄美學重建 - Navbar 精緻化
 function LynaLIcon({ active }: { active: boolean }) {
   return (
-    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark border-2 border-white/20 shadow-[0_0_15px_rgba(212,175,55,0.6)]' : 'border-2 border-gold-primary/30'}`}>
-      <span className={`text-xl font-black italic tracking-tighter ${active ? 'text-black' : 'gold-gradient-text'}`}>L</span>
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark border-2 border-white/20 shadow-[0_0_15px_rgba(212,175,55,0.6)]' : 'border-2 border-gold-primary/30'}`}>
+      <span className={`text-lg font-black italic tracking-tighter ${active ? 'text-black' : 'gold-gradient-text'}`}>L</span>
     </div>
   );
 }
 
-// Custom AI Butler Icon
+// 管家頭像保持微幅領先
 function ButlerIcon({ active }: { active: boolean }) {
   return (
     <div className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all duration-300 ${active ? 'border-gold-primary breathing-gold' : 'border-gold-primary/30'}`}>
@@ -35,6 +35,24 @@ function ButlerIcon({ active }: { active: boolean }) {
           (e.target as HTMLImageElement).src = "https://picsum.photos/seed/butler/100/100";
         }}
       />
+    </div>
+  );
+}
+
+// 公告欄精緻圓框
+function QuestsIcon({ active }: { active: boolean }) {
+  return (
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gold-primary/20 border-2 border-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-2 border-gold-primary/30'}`}>
+      <Scroll size={18} className={active ? "text-gold-light" : "text-gold-primary/60"} />
+    </div>
+  );
+}
+
+// 交誼廳精緻圓框
+function LoungeIcon({ active }: { active: boolean }) {
+  return (
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gold-primary/20 border-2 border-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-2 border-gold-primary/30'}`}>
+      <TrendingUp size={18} className={active ? "text-gold-light" : "text-gold-primary/60"} />
     </div>
   );
 }
@@ -148,7 +166,7 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="h-full w-full pb-32 overflow-y-auto">
+      <main className="h-full w-full">
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div 
@@ -253,9 +271,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Navigation Bar */}
+      {/* Navigation Bar - 精緻模式 */}
       <nav className="fixed bottom-0 left-0 w-full z-50 px-6 py-6 bg-gradient-to-t from-black to-transparent">
-        <div className="glass-card flex justify-between items-center px-6 py-3 border-gold-primary/20">
+        <div className="glass-card flex justify-between items-center px-8 py-3 border-gold-primary/20">
           <NavIcon 
             icon={<LynaLIcon active={activeTab === "home"} />} 
             active={activeTab === "home"} 
@@ -266,21 +284,21 @@ export default function App() {
             active={activeTab === "butler"} 
             onClick={() => setActiveTab("butler")} 
           />
-          <div className="relative -top-8">
+          <div className="relative -top-6">
             <button 
               onClick={() => setActiveTab("plus")}
-              className="w-16 h-16 rounded-full bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark text-black flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
+              className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark text-black flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.5)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
             >
-              <Plus size={36} strokeWidth={3} />
+              <Plus size={18} strokeWidth={3} />
             </button>
           </div>
           <NavIcon 
-            icon={<Scroll className={activeTab === "announcements" ? "text-gold-light" : "text-gold-primary/60"} />} 
+            icon={<QuestsIcon active={activeTab === "announcements"} />} 
             active={activeTab === "announcements"} 
             onClick={() => setActiveTab("announcements")} 
           />
           <NavIcon 
-            icon={<Club className={activeTab === "lounge" ? "text-gold-light" : "text-gold-primary/60"} />} 
+            icon={<LoungeIcon active={activeTab === "lounge"} />} 
             active={activeTab === "lounge"} 
             onClick={() => setActiveTab("lounge")} 
           />

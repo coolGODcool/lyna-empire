@@ -13,7 +13,10 @@ import {
   Sparkles,
   MessageSquare,
   Volume2,
-  Activity
+  Activity,
+  FileText,
+  Calculator,
+  Info
 } from "lucide-react";
 
 // Mock data for recommended products
@@ -23,12 +26,206 @@ const RECOMMENDED_PRODUCTS = [
   { id: 3, name: "帝國專屬按摩券", price: 1200, image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80" },
 ];
 
+// CEO 商業邏輯更新: 加盟申請書組件 (羊皮紙風格)
+const JoinEmpireForm = ({ onClose }: { onClose: () => void }) => {
+  const [formData, setFormData] = useState({
+    storeName: "",
+    category: "餐飲",
+    hours: "",
+    phone: "",
+    address: "",
+    description: "",
+    imageUrl: "",
+    mode: "預約式",
+    calendarId: "",
+    features: {
+      calendar: false,
+      ai: false,
+      dashboard: false,
+      marquee: false
+    },
+    agreed: false
+  });
+
+  // 規費計算邏輯
+  const calculateTotalTax = () => {
+    let total = 3.0; // 基礎規費 (首頁展示 + L幣支付)
+    if (formData.features.calendar) total += 2.0;
+    if (formData.features.ai) total += 3.0;
+    if (formData.features.dashboard) total += 2.0;
+    if (formData.features.marquee) total += 2.0;
+    return total.toFixed(1);
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl overflow-y-auto"
+    >
+      <div className="relative w-full max-w-lg bg-[#f4e4bc] text-[#5d4037] rounded-sm p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] font-serif border-[12px] border-[#8d6e63] border-double my-8">
+        {/* Parchment Texture Overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
+        
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors z-20">
+          <X size={24} />
+        </button>
+
+        <div className="relative space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-black tracking-tighter border-b-2 border-[#5d4037]/30 pb-2">萊娜帝國加盟申請書</h2>
+            <p className="text-xs italic opacity-70">Empire Franchise Application - Established 2024</p>
+          </div>
+
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-bold block">店名</label>
+                <input 
+                  type="text" 
+                  className="w-full bg-transparent border-b border-[#5d4037]/50 focus:border-[#5d4037] outline-none py-1"
+                  value={formData.storeName}
+                  onChange={e => setFormData({...formData, storeName: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold block">類別</label>
+                <select 
+                  className="w-full bg-transparent border-b border-[#5d4037]/50 focus:border-[#5d4037] outline-none py-1"
+                  value={formData.category}
+                  onChange={e => setFormData({...formData, category: e.target.value})}
+                >
+                  {["餐飲", "美容", "交通", "住宿", "零售", "娛樂"].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold block">店鋪簡介</label>
+              <textarea 
+                className="w-full bg-transparent border border-[#5d4037]/30 rounded p-2 focus:border-[#5d4037] outline-none h-20 text-xs"
+                value={formData.description}
+                onChange={e => setFormData({...formData, description: e.target.value})}
+                placeholder="請簡述您的經營理念與特色..."
+              />
+            </div>
+
+            {/* 規費計算器 */}
+            <div className="bg-[#5d4037]/5 p-4 rounded-lg border border-[#5d4037]/20 space-y-3">
+              <div className="flex items-center gap-2 border-b border-[#5d4037]/20 pb-2">
+                <Calculator size={18} />
+                <h3 className="font-bold">動態規費計算器</h3>
+              </div>
+              
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span>基礎規費 (首頁展示/L幣支付)</span>
+                  <span className="font-bold">3.0%</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={formData.features.calendar}
+                        onChange={e => setFormData({...formData, features: {...formData.features, calendar: e.target.checked}})}
+                      />
+                      <span>日曆同步功能 (+2.0%)</span>
+                    </div>
+                  </label>
+                  {formData.features.calendar && (
+                    <input 
+                      placeholder="Google Calendar ID"
+                      className="w-full bg-white/30 border-b border-[#5d4037]/30 px-2 py-1 outline-none text-[10px]"
+                      value={formData.calendarId}
+                      onChange={e => setFormData({...formData, calendarId: e.target.value})}
+                    />
+                  )}
+                </div>
+
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.features.ai}
+                      onChange={e => setFormData({...formData, features: {...formData.features, ai: e.target.checked}})}
+                    />
+                    <span>AI 智能客服 (+3.0%)</span>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-50">
+                    <span className="text-[9px]">自動處理諮詢</span>
+                    <Info size={10} />
+                  </div>
+                </label>
+
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.features.marquee}
+                      onChange={e => setFormData({...formData, features: {...formData.features, marquee: e.target.checked}})}
+                    />
+                    <span>帝國跑馬燈 (+2.0%)</span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="pt-2 border-t border-[#5d4037]/30 flex justify-between items-center">
+                <span className="font-bold">當前契約預計總規費：</span>
+                <span className="text-xl font-black text-[#8d6e63]">{calculateTotalTax()}%</span>
+              </div>
+            </div>
+
+            {/* 誠信條款 */}
+            <div className="pt-4 space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input 
+                  type="checkbox" 
+                  className="mt-1"
+                  checked={formData.agreed}
+                  onChange={e => setFormData({...formData, agreed: e.target.checked})}
+                />
+                <span className="text-[10px] leading-tight opacity-80 group-hover:opacity-100 transition-opacity">
+                  我同意誠實回報所有現金金流，並按月繳納上述規費。若有隱瞞，願受帝國法律制裁並沒收經營權。
+                </span>
+              </label>
+
+              <button 
+                onClick={() => {
+                  alert("加盟申請已送交帝國審核部，請靜候佳音。");
+                  onClose();
+                }}
+                disabled={!formData.agreed}
+                className={`w-full py-4 rounded font-black tracking-[0.2em] transition-all ${
+                  formData.agreed 
+                    ? 'bg-[#5d4037] text-[#f4e4bc] shadow-lg active:scale-95' 
+                    : 'bg-[#5d4037]/20 text-[#5d4037]/40 cursor-not-allowed'
+                }`}
+              >
+                提交加盟申請
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Wax Seal Effect */}
+        <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-[#b71c1c] rounded-full flex items-center justify-center rotate-12 shadow-xl border-4 border-[#880e4f] z-10">
+          <span className="text-[#f4e4bc] font-black text-2xl">萊娜</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 export default function Butler() {
   const [isFranchisee, setIsFranchisee] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [showCalendarDialog, setShowCalendarDialog] = useState(false);
+  const [showJoinForm, setShowJoinForm] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
   const [messages, setMessages] = useState<{ role: 'butler' | 'user', content: string }[]>([]);
   
@@ -46,7 +243,7 @@ export default function Butler() {
     setChatStarted(true);
     setIsTalking(true);
     setMessages([
-      { role: 'butler', content: "我是您的專屬管家 萊娜，我可以幫您做到心靈聊天、占卜、旅遊規劃與健身建議..." }
+      { role: 'butler', content: "我是您的專屬管家 萊娜，我可以幫您處理心靈聊天、占卜、生活規劃與日曆排程..." }
     ]);
     // Simulate speaking effect
     setTimeout(() => setIsTalking(false), 3000);
@@ -181,11 +378,18 @@ export default function Butler() {
                 exit={{ opacity: 0, y: -10 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-gold-dark/40 to-gold-primary/40 backdrop-blur-xl border border-gold-primary/50 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(212,175,55,0.2)]"
+                onClick={() => setShowJoinForm(true)}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-gold-dark/40 to-gold-primary/40 backdrop-blur-xl border border-gold-primary/50 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(212,175,55,0.2)] relative overflow-hidden group"
               >
-                <Store className="text-gold-primary" />
-                <span className="text-gold-light font-bold tracking-widest">加盟申請表 {'>'}</span>
-                <ChevronRight size={18} className="text-gold-primary" />
+                {/* Golden Glass Shine Effect */}
+                <motion.div 
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+                />
+                <FileText className="text-gold-primary relative z-10" />
+                <span className="text-gold-light font-bold tracking-widest relative z-10">加盟申請書 {'>'}</span>
+                <ChevronRight size={18} className="text-gold-primary relative z-10" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -365,6 +569,13 @@ export default function Butler() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* 5. Join Empire Form */}
+      <AnimatePresence>
+        {showJoinForm && (
+          <JoinEmpireForm onClose={() => setShowJoinForm(false)} />
         )}
       </AnimatePresence>
 

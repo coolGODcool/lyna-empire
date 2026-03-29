@@ -85,12 +85,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [userId] = useState("LN-001"); // Mock identity: LN-001 (CEO), Lord_001, or User_001
   
-  const mockStores: Store[] = [
+  const initialStores: Store[] = [
     { 
       id: "1", 
       name: "萊娜精品咖啡 (旗艦店)", 
       description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
-      image: "https://picsum.photos/seed/coffee/800/1200",
+      image: "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80",
       category: "精品餐飲",
       rating: 9.9,
       distance: "0.8KM",
@@ -101,9 +101,9 @@ export default function App() {
     },
     { 
       id: "2", 
-      name: "皇室 A5 和牛私廚", 
+      name: "五五六六和牛燒肉", 
       description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
-      image: "https://picsum.photos/seed/meat/800/1200",
+      image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
       category: "頂級美食",
       rating: 9.7,
       distance: "1.2KM",
@@ -116,7 +116,7 @@ export default function App() {
       id: "3", 
       name: "黑金流光威士忌吧", 
       description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
-      image: "https://picsum.photos/seed/bar/800/1200",
+      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80",
       category: "夜生活",
       rating: 9.5,
       distance: "2.5KM",
@@ -129,7 +129,7 @@ export default function App() {
       id: "4", 
       name: "帝國極限體能館", 
       description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
-      image: "https://picsum.photos/seed/gym/800/1200",
+      image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
       category: "運動健身",
       rating: 9.2,
       distance: "3.0KM",
@@ -142,7 +142,7 @@ export default function App() {
       id: "5", 
       name: "LN-001 專屬訂製西服", 
       description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
-      image: "https://picsum.photos/seed/suit/800/1200",
+      image: "https://images.unsplash.com/photo-1594932224828-b4b057b7d6ee?auto=format&fit=crop&w=800&q=80",
       category: "精品服飾",
       rating: 10.0,
       distance: "全域配送",
@@ -153,7 +153,7 @@ export default function App() {
     }
   ];
 
-  const [stores, setStores] = useState<Store[]>(mockStores);
+  const [stores, setStores] = useState<Store[]>(initialStores);
   const [loading, setLoading] = useState(false);
   const [showBounty, setShowBounty] = useState(false);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
@@ -168,87 +168,9 @@ export default function App() {
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch stores
+  // Remove fetchStores to ensure hard-coded data is used immediately
   useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        const mockData: Store[] = [
-          { 
-            id: "1", 
-            name: "萊娜精品咖啡 (旗艦店)", 
-            description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
-            image: "https://picsum.photos/seed/coffee/800/1200",
-            category: "精品餐飲",
-            rating: 9.9,
-            distance: "0.8KM",
-            sales: "2.5K",
-            queueTime: "10min",
-            tags: ["#高雄", "#鼓山區", "#精品餐飲", "#評價: 9.9"],
-            serviceMode: 'mixed'
-          },
-          { 
-            id: "2", 
-            name: "皇室 A5 和牛私廚", 
-            description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
-            image: "https://picsum.photos/seed/meat/800/1200",
-            category: "頂級美食",
-            rating: 9.7,
-            distance: "1.2KM",
-            sales: "1.2K",
-            queueTime: "25min",
-            tags: ["#高雄", "#前鎮區", "#和牛", "#評價: 9.7"],
-            serviceMode: 'order'
-          },
-          { 
-            id: "3", 
-            name: "黑金流光威士忌吧", 
-            description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
-            image: "https://picsum.photos/seed/bar/800/1200",
-            category: "夜生活",
-            rating: 9.5,
-            distance: "2.5KM",
-            sales: "0.8K",
-            queueTime: "5min",
-            tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
-            serviceMode: 'reserve'
-          },
-          { 
-            id: "4", 
-            name: "帝國極限體能館", 
-            description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
-            image: "https://picsum.photos/seed/gym/800/1200",
-            category: "運動健身",
-            rating: 9.2,
-            distance: "3.0KM",
-            sales: "1.5K",
-            queueTime: "15min",
-            tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
-            serviceMode: 'reserve'
-          },
-          { 
-            id: "5", 
-            name: "LN-001 專屬訂製西服", 
-            description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
-            image: "https://picsum.photos/seed/suit/800/1200",
-            category: "精品服飾",
-            rating: 10.0,
-            distance: "全域配送",
-            sales: "0.5K",
-            queueTime: "預約制",
-            tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
-            serviceMode: 'mixed'
-          }
-        ];
-        
-        setStores(mockData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch stores:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchStores();
+    // Data is already initialized in useState
   }, []);
 
   const handleInteractionStart = (store: Store) => {
@@ -348,7 +270,7 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="h-full w-full">
+      <main className="h-full w-full pb-[120px]">
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div 
@@ -366,7 +288,7 @@ export default function App() {
                 stores.map((store) => (
                   <div 
                     key={store.id} 
-                    className="snap-item relative"
+                    className="snap-item relative h-full"
                     onMouseDown={() => handleInteractionStart(store)}
                     onMouseUp={handleInteractionEnd}
                     onTouchStart={() => handleInteractionStart(store)}
@@ -441,19 +363,19 @@ export default function App() {
           )}
 
           {activeTab === "butler" && (
-            <motion.div key="butler" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 pb-32 h-full overflow-y-auto">
+            <motion.div key="butler" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 h-full overflow-y-auto">
               <Butler />
             </motion.div>
           )}
 
           {activeTab === "announcements" && (
-            <motion.div key="quests" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 pb-32 h-full overflow-y-auto">
+            <motion.div key="quests" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 h-full overflow-y-auto">
               <Quests />
             </motion.div>
           )}
 
           {activeTab === "lounge" && (
-            <motion.div key="lounge" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 pb-32 h-full overflow-y-auto">
+            <motion.div key="lounge" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 h-full overflow-y-auto">
               <Lounge userId={userId} />
             </motion.div>
           )}

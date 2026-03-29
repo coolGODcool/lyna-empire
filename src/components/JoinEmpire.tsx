@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Check, Info, Calculator, Store, Phone, MapPin, Clock, Image as ImageIcon, FileText, Gift } from "lucide-react";
-import { QRCodeCanvas } from "qrcode.react";
 
 interface JoinEmpireProps {
   onClose: () => void;
@@ -338,19 +337,24 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
               <div className="relative p-4 bg-white rounded-xl shadow-inner flex justify-center items-center">
                 {/* 金色發光外框 */}
                 <div className="absolute inset-0 border-4 border-[#d4af37] rounded-xl animate-pulse pointer-events-none" />
-                <QRCodeCanvas 
-                  value={shopUrl}
-                  size={200}
-                  level="H"
-                  imageSettings={{
-                    src: "/IMG_4166.PNG",
-                    x: undefined,
-                    y: undefined,
-                    height: 40,
-                    width: 40,
-                    excavate: true,
-                  }}
-                />
+                <div className="relative">
+                  <img 
+                    src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(shopUrl)}&choe=UTF-8`}
+                    alt="Shop QR Code"
+                    className="w-[200px] h-[200px]"
+                  />
+                  {/* 中央頭像 */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-10 h-10 bg-white p-0.5 rounded-lg border-2 border-[#d4af37] overflow-hidden shadow-lg">
+                      <img 
+                        src="/IMG_4166.PNG" 
+                        alt="Lyna" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
               <p className="text-[10px] text-[#8d6e63] break-all">{shopUrl}</p>
             </div>

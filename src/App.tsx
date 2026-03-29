@@ -16,7 +16,8 @@ import {
   EyeOff,
   Clock,
   X,
-  Mic
+  Mic,
+  Spade
 } from "lucide-react";
 import Butler from "./components/Butler";
 import Quests from "./components/Quests";
@@ -54,10 +55,11 @@ function QuestsIcon({ active }: { active: boolean }) {
   );
 }
 
+// 交誼廳精緻圓框 (撲克牌/黑桃樣式)
 function LoungeIcon({ active }: { active: boolean }) {
   return (
     <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gold-primary/20 border-2 border-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-2 border-gold-primary/30'}`}>
-      <TrendingUp size={18} className={active ? "text-gold-light" : "text-gold-primary/60"} />
+      <Spade size={18} className={active ? "text-gold-light" : "text-gold-primary/60"} />
     </div>
   );
 }
@@ -81,8 +83,78 @@ interface Store {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const [stores, setStores] = useState<Store[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [userId] = useState("LN-001"); // Mock identity: LN-001 (CEO), Lord_001, or User_001
+  
+  const mockStores: Store[] = [
+    { 
+      id: "1", 
+      name: "萊娜精品咖啡 (旗艦店)", 
+      description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
+      image: "https://picsum.photos/seed/coffee/800/1200",
+      category: "精品餐飲",
+      rating: 9.9,
+      distance: "0.8KM",
+      sales: "2.5K",
+      queueTime: "10min",
+      tags: ["#高雄", "#鼓山區", "#精品餐飲", "#評價: 9.9"],
+      serviceMode: 'mixed'
+    },
+    { 
+      id: "2", 
+      name: "皇室 A5 和牛私廚", 
+      description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
+      image: "https://picsum.photos/seed/meat/800/1200",
+      category: "頂級美食",
+      rating: 9.7,
+      distance: "1.2KM",
+      sales: "1.2K",
+      queueTime: "25min",
+      tags: ["#高雄", "#前鎮區", "#和牛", "#評價: 9.7"],
+      serviceMode: 'order'
+    },
+    { 
+      id: "3", 
+      name: "黑金流光威士忌吧", 
+      description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
+      image: "https://picsum.photos/seed/bar/800/1200",
+      category: "夜生活",
+      rating: 9.5,
+      distance: "2.5KM",
+      sales: "0.8K",
+      queueTime: "5min",
+      tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
+      serviceMode: 'reserve'
+    },
+    { 
+      id: "4", 
+      name: "帝國極限體能館", 
+      description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
+      image: "https://picsum.photos/seed/gym/800/1200",
+      category: "運動健身",
+      rating: 9.2,
+      distance: "3.0KM",
+      sales: "1.5K",
+      queueTime: "15min",
+      tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
+      serviceMode: 'reserve'
+    },
+    { 
+      id: "5", 
+      name: "LN-001 專屬訂製西服", 
+      description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
+      image: "https://picsum.photos/seed/suit/800/1200",
+      category: "精品服飾",
+      rating: 10.0,
+      distance: "全域配送",
+      sales: "0.5K",
+      queueTime: "預約制",
+      tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
+      serviceMode: 'mixed'
+    }
+  ];
+
+  const [stores, setStores] = useState<Store[]>(mockStores);
+  const [loading, setLoading] = useState(false);
   const [showBounty, setShowBounty] = useState(false);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
   const [orderSubMode, setOrderSubMode] = useState<'instant' | 'reserve' | null>(null);
@@ -382,7 +454,7 @@ export default function App() {
 
           {activeTab === "lounge" && (
             <motion.div key="lounge" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 pb-32 h-full overflow-y-auto">
-              <Lounge userId="CEO_5566" />
+              <Lounge userId={userId} />
             </motion.div>
           )}
         </AnimatePresence>

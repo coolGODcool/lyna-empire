@@ -12,7 +12,8 @@ import {
   X,
   Sparkles,
   MessageSquare,
-  Volume2
+  Volume2,
+  Activity
 } from "lucide-react";
 
 // Mock data for recommended products
@@ -171,44 +172,83 @@ export default function Butler() {
             <span className={`text-xs font-bold transition-colors ${isFranchisee ? 'text-gold-primary' : 'text-gray-500'}`}>加盟主</span>
           </div>
 
-          {/* Franchise Button */}
-          <motion.button 
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-gold-dark/40 to-gold-primary/40 backdrop-blur-xl border border-gold-primary/50 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(212,175,55,0.2)]"
-          >
-            <Store className="text-gold-primary" />
-            <span className="text-gold-light font-bold tracking-widest">加盟申請表</span>
-            <ChevronRight size={18} className="text-gold-primary" />
-          </motion.button>
+          {/* Franchise Button - Only for Franchisees */}
+          <AnimatePresence>
+            {isFranchisee && (
+              <motion.button 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-gold-dark/40 to-gold-primary/40 backdrop-blur-xl border border-gold-primary/50 flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(212,175,55,0.2)]"
+              >
+                <Store className="text-gold-primary" />
+                <span className="text-gold-light font-bold tracking-widest">加盟申請表 {'>'}</span>
+                <ChevronRight size={18} className="text-gold-primary" />
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-          {/* Recommended Products */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-gold-primary" />
-              <h3 className="text-xs font-bold text-gold-light uppercase tracking-widest">萊娜管家推薦</h3>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {RECOMMENDED_PRODUCTS.map((product) => (
-                <motion.div 
-                  key={product.id}
-                  whileHover={{ y: -5 }}
-                  className="min-w-[160px] bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden"
-                >
-                  <img src={product.image} alt={product.name} className="w-full h-24 object-cover" />
-                  <div className="p-3">
-                    <h4 className="text-xs font-bold text-white truncate">{product.name}</h4>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-gold-primary font-bold text-sm">${product.price}</span>
-                      <button className="p-1 bg-gold-primary/20 rounded-lg">
-                        <ChevronRight size={14} className="text-gold-primary" />
-                      </button>
+          {/* Conditional Content: Recommended Products or Territory Dashboard */}
+          {!isFranchisee ? (
+            /* Recommended Products for Citizens */
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-gold-primary" />
+                <h3 className="text-xs font-bold text-gold-light uppercase tracking-widest">萊娜管家推薦</h3>
+              </div>
+              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                {RECOMMENDED_PRODUCTS.map((product) => (
+                  <motion.div 
+                    key={product.id}
+                    whileHover={{ y: -5 }}
+                    className="min-w-[160px] bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden"
+                  >
+                    <img src={product.image} alt={product.name} className="w-full h-24 object-cover" />
+                    <div className="p-3">
+                      <h4 className="text-xs font-bold text-white truncate">{product.name}</h4>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-gold-primary font-bold text-sm">${product.price}</span>
+                        <button className="p-1 bg-gold-primary/20 rounded-lg">
+                          <ChevronRight size={14} className="text-gold-primary" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
+              </div>
+              {/* Added Spiritual Consultation for Citizens */}
+              <button className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-gold-light/80 hover:bg-white/10 transition-colors">
+                <Sparkles size={14} className="text-gold-primary" />
+                萊娜心靈諮詢
+              </button>
             </div>
-          </div>
+          ) : (
+            /* Territory Management Dashboard for Franchisees */
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Activity size={16} className="text-gold-primary" />
+                <h3 className="text-xs font-bold text-gold-light uppercase tracking-widest">領地經營看板</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="glass-card p-4 flex items-center justify-between border-gold-primary/20">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="text-gold-primary" size={20} />
+                    <span className="text-sm font-medium text-white">店家 Google 日曆狀態</span>
+                  </div>
+                  <span className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-md">已連線</span>
+                </div>
+                <div className="glass-card p-4 flex items-center justify-between border-gold-primary/20">
+                  <div className="flex items-center gap-3">
+                    <Check className="text-gold-primary" size={20} />
+                    <span className="text-sm font-medium text-white">8% 自動扣款授權</span>
+                  </div>
+                  <span className="text-xs font-bold text-gold-primary bg-gold-primary/10 px-2 py-1 rounded-md">已啟用</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 3. Bottom Chat: AI Butler */}
@@ -320,7 +360,7 @@ export default function Butler() {
                   className="py-3 rounded-xl bg-gold-primary text-black font-bold flex items-center justify-center gap-2"
                 >
                   <Check size={18} />
-                  同意寫入
+                  {isFranchisee ? "同步到店務日曆" : "同步到我的日曆"}
                 </button>
               </div>
             </motion.div>

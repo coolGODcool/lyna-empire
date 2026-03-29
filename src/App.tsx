@@ -233,7 +233,7 @@ export default function App() {
 
           {activeTab === "lounge" && (
             <motion.div key="lounge" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 pb-32 h-full overflow-y-auto">
-              <Lounge />
+              <Lounge userId="CEO_5566" />
             </motion.div>
           )}
         </AnimatePresence>

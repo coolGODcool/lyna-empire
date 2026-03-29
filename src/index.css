@@ -161,3 +161,24 @@
     3px 3px 5px rgba(0,0,0,0.5);
   letter-spacing: 0.1em;
 }
+
+.gold-flow-bg {
+  background: linear-gradient(90deg, #996515, #D4AF37, #F9E29C, #D4AF37, #996515);
+  background-size: 200% auto;
+  animation: goldFlow 3s linear infinite;
+}
+
+@keyframes goldFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}

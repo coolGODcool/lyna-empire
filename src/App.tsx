@@ -148,7 +148,7 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="h-full w-full">
+      <main className="h-full w-full pb-32 overflow-y-auto">
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div 

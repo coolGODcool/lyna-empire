@@ -96,13 +96,16 @@ export default function Butler() {
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-black">
-      {/* Global Background - Lena (IMG_4166.PNG placeholder) */}
+      {/* Global Background - Lena (Futuristic AI Image) */}
       <div className="absolute inset-0 z-0">
         <img 
-          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&q=80" 
+          src="/IMG_4166.PNG" 
           alt="Lyna" 
           className="w-full h-full object-cover opacity-60"
           referrerPolicy="no-referrer"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&q=80";
+          }}
         />
         {/* Breathing Light Overlay */}
         <motion.div 

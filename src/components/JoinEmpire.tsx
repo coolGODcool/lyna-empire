@@ -12,9 +12,12 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
   const [formData, setFormData] = useState({
     storeName: "",
     category: "餐飲",
-    hours: "",
+    operatingDays: ["一", "二", "三", "四", "五"],
+    hours: "10:00 - 22:00",
     phone: "",
     address: "",
+    businessDistrict: "鳳山維新路",
+    customDistrict: "",
     imageUrl: "",
     description: "",
     features: {
@@ -26,8 +29,27 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
       design: false,
       marquee: false,
     },
+    privileges: [] as string[],
     agreed: false
   });
+
+  const toggleDay = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      operatingDays: prev.operatingDays.includes(day)
+        ? prev.operatingDays.filter(d => d !== day)
+        : [...prev.operatingDays, day]
+    }));
+  };
+
+  const togglePrivilege = (priv: string) => {
+    setFormData(prev => ({
+      ...prev,
+      privileges: prev.privileges.includes(priv)
+        ? prev.privileges.filter(p => p !== priv)
+        : [...prev.privileges, priv]
+    }));
+  };
 
   const [isStamping, setIsStamping] = useState(false);
 
@@ -44,7 +66,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
 
   // 規費計算邏輯 (6/4 法則)
   const calculateTax = () => {
-    // 基礎服務使用費：6.0% (含 AI 選單、語音報單)
+    // 基礎服務使用費：6.0% (含 AI 選單、雲端語音報單)
     // L-Coin 支付特權：勾選後降至 4.0%
     let base = formData.features.lcoinPrivilege ? 4.0 : 6.0;
     let total = base;
@@ -64,15 +86,23 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
     setIsStamping(true);
     
     // 模擬壓印震動與延遲
-    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     
     setTimeout(() => {
       setStep("success");
       setIsStamping(false);
-    }, 1000);
+    }, 1200);
   };
 
   const shopUrl = `${window.location.origin}/?shopId=${userId}`;
+
+  const days = ["一", "二", "三", "四", "五", "六", "日"];
+  const districts = ["鳳山維新路", "青年夜市", "中華街觀光夜市", "其他 (自定義)"];
+  const privilegeGroups = [
+    ["接受預約訂位", "接受現場排隊", "支援自主外送", "支援客製化要求"],
+    ["寵物友善", "設有專屬停車位", "鄰近公有停車位", "設有洗手間"],
+    ["提供內用座位", "提供兒童座椅", "提供插座借用", "提供免費 Wi-Fi"]
+  ];
 
   return (
     <motion.div 
@@ -89,7 +119,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
             animate={{ y: 0, opacity: 1, rotateX: 0 }}
             exit={{ y: -100, opacity: 0, rotateX: -45 }}
             transition={{ type: "spring", damping: 20 }}
-            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 min-h-fit flex flex-col"
+            className="relative w-full max-w-3xl parchment p-8 md:p-12 my-8 min-h-fit flex flex-col"
           >
             {/* Parchment Burnt Edges Effect */}
             <div className="parchment-edge" />
@@ -106,9 +136,9 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                 <p className="text-xs text-[#8d6e63] font-bold uppercase tracking-[0.3em]">Imperial Franchise Covenant</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* 左側：基本資料 */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
                       <Store size={12} /> 店名
@@ -135,17 +165,54 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                     </select>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
-                      <Clock size={12} /> 營業時間
+                      <Clock size={12} /> 營業時段 (週一至週日)
                     </label>
+                    <div className="flex gap-1 mb-2">
+                      {days.map(day => (
+                        <button
+                          key={day}
+                          onClick={() => toggleDay(day)}
+                          className={`w-8 h-8 rounded-full text-[10px] font-black transition-all border ${
+                            formData.operatingDays.includes(day)
+                              ? "bg-[#5d4037] text-[#f4e4bc] border-[#5d4037]"
+                              : "bg-white/20 text-[#5d4037]/40 border-[#5d4037]/20 hover:border-[#5d4037]/40"
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
                     <input 
                       type="text" 
-                      placeholder="例: 10:00 - 22:00"
+                      placeholder="每日固定營業時段 (例: 10:00 - 22:00)"
                       className="w-full bg-white/20 border-b-2 border-[#d4af37]/30 focus:border-[#d4af37] outline-none py-2 px-1 text-[#5d4037] font-bold placeholder:text-[#5d4037]/30"
                       value={formData.hours}
                       onChange={e => setFormData({...formData, hours: e.target.value})}
                     />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
+                      <MapPin size={12} /> 所屬商圈
+                    </label>
+                    <select 
+                      className="w-full bg-white/20 border-b-2 border-[#d4af37]/30 focus:border-[#d4af37] outline-none py-2 px-1 text-[#5d4037] font-bold mb-2"
+                      value={formData.businessDistrict}
+                      onChange={e => setFormData({...formData, businessDistrict: e.target.value})}
+                    >
+                      {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    {formData.businessDistrict === "其他 (自定義)" && (
+                      <input 
+                        type="text" 
+                        placeholder="請輸入商圈名稱"
+                        className="w-full bg-white/20 border-b-2 border-[#d4af37]/30 focus:border-[#d4af37] outline-none py-2 px-1 text-[#5d4037] font-bold placeholder:text-[#5d4037]/30"
+                        value={formData.customDistrict}
+                        onChange={e => setFormData({...formData, customDistrict: e.target.value})}
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-1">
@@ -163,10 +230,10 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                 </div>
 
                 {/* 右側：進階資料 */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
-                      <MapPin size={12} /> 地址
+                      <MapPin size={12} /> 詳細地址
                     </label>
                     <input 
                       type="text" 
@@ -222,6 +289,27 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                 </div>
               </div>
 
+              {/* 領地服務特權 */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-[#5d4037]/60 uppercase tracking-widest flex items-center gap-2">
+                  <Check size={14} className="text-[#d4af37]" /> 領地服務特權 (可複選)
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white/10 p-4 rounded-xl border border-[#d4af37]/20">
+                  {privilegeGroups.map((group, idx) => (
+                    <div key={idx} className="space-y-2">
+                      {group.map(priv => (
+                        <FeatureCheckbox 
+                          key={priv}
+                          label={priv}
+                          checked={formData.privileges.includes(priv)}
+                          onChange={() => togglePrivilege(priv)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* 核心商業規則：規費邏輯 */}
               <div className="bg-[#5d4037]/5 p-6 rounded-xl border-2 border-[#d4af37]/20 space-y-4">
                 <div className="flex items-center justify-between border-b border-[#d4af37]/20 pb-3">
@@ -238,19 +326,20 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                 <div className="space-y-3">
                   <div className="p-3 bg-white/40 rounded-lg border border-[#d4af37]/30">
                     <p className="text-xs font-black text-[#5d4037] flex items-center justify-between">
-                      <span>基礎服務使用費 ({formData.features.lcoinPrivilege ? '4.0%' : '6.0%'})</span>
+                      <span>基礎規費 (6.0%)</span>
                       <span className="text-[10px] bg-[#d4af37] text-white px-2 py-0.5 rounded">
-                        {formData.features.lcoinPrivilege ? 'L-Coin 特權價' : '標準規費'}
+                        開國特許價
                       </span>
                     </p>
-                    <p className="text-[9px] text-[#8d6e63] mt-1">內含：AI 全球語系動態選單、萊娜語音報單系統</p>
+                    <p className="text-[9px] text-[#8d6e63] mt-1">內含：AI 全球語系動態選單、雲端語音報單系統</p>
+                    <p className="text-[9px] font-black text-[#5d4037] mt-1 italic">※ 優先推廣 L-Coin 支付可享優惠規費 4.0%</p>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-[#5d4037]/60 uppercase tracking-widest">功能選配與特權</p>
+                    <p className="text-[10px] font-black text-[#5d4037]/60 uppercase tracking-widest">加值功能選配</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <FeatureCheckbox 
-                        label="L-Coin 支付特權 (總規費降至 4.0%)" 
+                        label="L-Coin 支付特權 (規費降至 4.0%)" 
                         checked={formData.features.lcoinPrivilege} 
                         onChange={v => setFormData({...formData, features: {...formData.features, lcoinPrivilege: v}})} 
                         highlight
@@ -291,7 +380,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                   <div className="mt-4 p-3 bg-red-900/5 border border-red-900/20 rounded-lg">
                     <p className="text-[10px] font-bold text-red-900 leading-relaxed flex gap-2">
                       <Info size={14} className="shrink-0" />
-                      <span>凡透過第三方支付（LINE Pay、信用卡）產生之金流手續費（約 3%-3.5%）需由領主自行負擔，萊娜服務費僅為系統使用規費。</span>
+                      <span>第三方金流（LINE Pay/信用卡）之手續費由領主負擔，萊娜服務費僅為系統使用規費。</span>
                     </p>
                   </div>
                 </div>
@@ -299,36 +388,42 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
 
               {/* 誠信條款與提交 */}
               <div className="pt-6 space-y-6 flex flex-col items-center">
-                <label className="flex items-start gap-3 cursor-pointer group max-w-md">
-                  <input 
-                    type="checkbox" 
-                    className="mt-1 accent-[#5d4037]"
-                    checked={formData.agreed}
-                    onChange={e => setFormData({...formData, agreed: e.target.checked})}
-                  />
-                  <span className="text-[10px] leading-tight text-[#5d4037] font-medium opacity-80 group-hover:opacity-100 transition-opacity">
-                    我在此宣誓效忠萊娜帝國，並承諾誠實申報所有營業額。若有欺瞞，願受帝國法律裁決並永久撤銷領主資格。
-                  </span>
-                </label>
+                <div className="space-y-2 text-center max-w-md">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      className="mt-1 accent-[#5d4037]"
+                      checked={formData.agreed}
+                      onChange={e => setFormData({...formData, agreed: e.target.checked})}
+                    />
+                    <span className="text-[10px] leading-tight text-[#5d4037] font-black opacity-90 group-hover:opacity-100 transition-opacity">
+                      我已閱讀並同意加盟服務條款，承諾誠實經營並確保品質。
+                    </span>
+                  </label>
+                  <p className="text-[9px] text-red-900 font-bold italic opacity-70">
+                    ⚠️ 萊娜帝國以誠信為本。凡蓄意欺瞞營業額者，本帝國保有最終裁決權，得永久撤銷其領主資格。
+                  </p>
+                </div>
 
                 <div className="relative">
                   <motion.button 
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.9 }}
+                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    whileTap={{ scale: 0.7, rotate: -10 }}
                     onClick={handleSubmit}
                     disabled={!formData.agreed || isStamping}
                     className={`wax-seal-btn ${formData.agreed ? 'opacity-100' : 'opacity-30 grayscale cursor-not-allowed'}`}
                   >
-                    <div className="wax-seal-inner">
-                      <span className="text-[#f4e4bc] font-black text-xl tracking-tighter">萊娜</span>
+                    <div className="wax-seal-inner shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]">
+                      <span className="text-[#f4e4bc] font-black text-xl tracking-tighter drop-shadow-md">萊娜</span>
                       <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
                     </div>
                   </motion.button>
                   {isStamping && (
                     <motion.div 
-                      initial={{ scale: 2, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="absolute inset-0 bg-[#b71c1c] rounded-full blur-xl"
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 2.5, opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="absolute inset-0 bg-[#b71c1c] rounded-full blur-2xl"
                     />
                   )}
                 </div>
@@ -336,6 +431,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
               </div>
             </div>
           </motion.div>
+
         ) : (
           <motion.div 
             key="success"
@@ -432,7 +528,15 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
   );
 };
 
-const FeatureCheckbox = ({ label, checked, onChange, highlight }: { label: string, checked: boolean, onChange: (v: boolean) => void, highlight?: boolean }) => (
+interface FeatureCheckboxProps {
+  key?: string;
+  label: string;
+  checked: boolean;
+  onChange: (v?: boolean) => void;
+  highlight?: boolean;
+}
+
+const FeatureCheckbox = ({ label, checked, onChange, highlight }: FeatureCheckboxProps) => (
   <label className="flex items-center gap-2 cursor-pointer group">
     <div 
       onClick={() => onChange(!checked)}

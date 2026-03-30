@@ -54,7 +54,7 @@ export default function Butler() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize Gemini
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: AIzaSyANO16UJS2lnqxEAqqz2zsce2ln4Cmg_XE });
 
   useEffect(() => {
     if (chatEndRef.current) {

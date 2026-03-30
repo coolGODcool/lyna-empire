@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Check, Info, Calculator, Store, Phone, MapPin, Clock, Image as ImageIcon, FileText, Gift } from "lucide-react";
+import { X, Check, Info, Calculator, Store, Phone, MapPin, Clock, Image as ImageIcon, FileText, Gift, RotateCcw } from "lucide-react";
 
 interface JoinEmpireProps {
   onClose: () => void;
@@ -30,6 +30,17 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
   });
 
   const [isStamping, setIsStamping] = useState(false);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, imageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // 規費計算邏輯
   const calculateTax = () => {
@@ -67,7 +78,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-     className="fixed inset-0 z-[200] bg-[#1a120b] bg-[url('https://www.transparenttextures.com/patterns/dark-wood.png')] overflow-y-auto p-4 md:flex md:items-start md:justify-center"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#1a120b] bg-[url('https://www.transparenttextures.com/patterns/dark-wood.png')] overflow-y-auto p-4"
     >
       <AnimatePresence mode="wait">
         {step === "form" ? (
@@ -77,7 +88,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
             animate={{ y: 0, opacity: 1, rotateX: 0 }}
             exit={{ y: -100, opacity: 0, rotateX: -45 }}
             transition={{ type: "spring", damping: 20 }}
-            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 flex flex-col mx-auto"
+            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 min-h-[80vh] flex flex-col"
           >
             {/* Parchment Burnt Edges Effect */}
             <div className="parchment-edge" />
@@ -167,15 +178,33 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
-                      <ImageIcon size={12} /> 形象圖 URL
+                      <ImageIcon size={12} /> 點擊上傳或拍照店面形象圖
                     </label>
-                    <input 
-                      type="text" 
-                      placeholder="https://..."
-                      className="w-full bg-white/20 border-b-2 border-[#d4af37]/30 focus:border-[#d4af37] outline-none py-2 px-1 text-[#5d4037] font-bold placeholder:text-[#5d4037]/30"
-                      value={formData.imageUrl}
-                      onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                    />
+                    <div className="relative group mt-1">
+                      {formData.imageUrl ? (
+                        <div className="relative w-full h-24 rounded-lg overflow-hidden border-2 border-[#d4af37]/40 shadow-inner">
+                          <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                          <button 
+                            onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                            className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                            title="重新上傳"
+                          >
+                            <RotateCcw size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#d4af37]/30 rounded-lg cursor-pointer hover:bg-[#d4af37]/5 transition-all group">
+                          <ImageIcon size={20} className="text-[#d4af37]/50 mb-1 group-hover:scale-110 transition-transform" />
+                          <span className="text-[9px] font-bold text-[#5d4037]/40">選擇圖片或開啟相機</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={handleImageUpload}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -378,8 +407,6 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
           border-style: double;
           border-width: 12px;
           border-color: #8d6e63;
-          position: relative; 
-          overflow: visible;
         }
         .parchment-edge {
           position: absolute;

@@ -21,6 +21,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
     customDistrict: "",
     imageUrl: "",
     description: "",
+    expectedUid: "A-XXX",
     features: {
       lcoinPrivilege: true,
       invoice: false,
@@ -99,6 +100,26 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
 
   const days = ["一", "二", "三", "四", "五", "六", "日"];
   const districts = ["鳳山維新路", "青年夜市", "中華街觀光夜市", "其他 (自定義)"];
+  
+  const getUidPrefix = (category: string) => {
+    switch (category) {
+      case "餐飲": return "A";
+      case "美容": return "S";
+      case "零售": return "R";
+      case "娛樂": return "E";
+      default: return "G";
+    }
+  };
+
+  const handleCategoryChange = (category: string) => {
+    const prefix = getUidPrefix(category);
+    setFormData({
+      ...formData,
+      category,
+      expectedUid: `${prefix}-XXX`
+    });
+  };
+
   const privilegeGroups = [
     ["接受預約訂位", "接受現場排隊", "支援自主外送", "支援客製化要求"],
     ["寵物友善", "設有專屬停車位", "鄰近公有停車位", "設有洗手間"],
@@ -165,6 +186,32 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                     />
                   </div>
 
+                  {/* 預計分配 UID 區塊 */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
+                      預計分配 UID (Imperial ID)
+                    </label>
+                    <div className="relative overflow-hidden bg-black/40 border border-[#d4af37]/50 rounded-lg p-3 flex flex-col items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={formData.expectedUid}
+                          initial={{ opacity: 0, scale: 0.8, filter: "blur(4px)" }}
+                          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                          exit={{ opacity: 0, scale: 1.2, filter: "blur(4px)" }}
+                          className="flex flex-col items-center"
+                        >
+                          <span className="text-2xl font-black font-mono tracking-[0.2em] text-[#d4af37] drop-shadow-[0_0_8px_rgba(212,175,55,0.6)]">
+                            {formData.expectedUid}
+                          </span>
+                        </motion.div>
+                      </AnimatePresence>
+                      <p className="text-[8px] font-bold text-[#d4af37]/60 mt-1">正式序號將由國庫依加盟順序核發</p>
+                      
+                      {/* Scanline effect */}
+                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#d4af37]/5 to-transparent h-1/2 w-full animate-scanline" />
+                    </div>
+                  </div>
+
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
                       <FileText size={12} /> 類別
@@ -172,7 +219,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                     <select 
                       className="w-full bg-white/20 border-b-2 border-[#d4af37]/30 focus:border-[#d4af37] outline-none py-2 px-1 text-[#5d4037] font-bold"
                       value={formData.category}
-                      onChange={e => setFormData({...formData, category: e.target.value})}
+                      onChange={e => handleCategoryChange(e.target.value)}
                     >
                       {["餐飲", "美容", "交通", "住宿", "零售", "娛樂"].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -499,7 +546,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                     </button>
                     
                     <div className="space-y-6 text-[#5d4037]">
-                      <h3 className="text-2xl font-black italic border-b-2 border-[#5d4037]/20 pb-2">領主加盟服務條約</h3>
+                      <h3 className="text-2xl font-black italic border-b-2 border-[#5d4037]/20 pb-2">領主加盟服務條約 (v2.2)</h3>
                       
                       <div className="space-y-4 text-xs font-bold leading-relaxed">
                         <section className="space-y-2">
@@ -636,6 +683,13 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
           justify-content: center;
           background: radial-gradient(circle at 30% 30%, #d32f2f, #b71c1c);
           position: relative;
+        }
+        @keyframes scanline {
+          0% { transform: translateY(-100%); }
+          100% { transform: translateY(200%); }
+        }
+        .animate-scanline {
+          animation: scanline 3s linear infinite;
         }
       `}</style>
     </motion.div>

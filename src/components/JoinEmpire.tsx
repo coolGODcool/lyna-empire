@@ -67,7 +67,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#1a120b] bg-[url('https://www.transparenttextures.com/patterns/dark-wood.png')] overflow-y-auto p-4"
+     className="fixed inset-0 z-[200] bg-[#1a120b] bg-[url('https://www.transparenttextures.com/patterns/dark-wood.png')] overflow-y-auto p-4 md:flex md:items-start md:justify-center"
     >
       <AnimatePresence mode="wait">
         {step === "form" ? (
@@ -77,7 +77,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
             animate={{ y: 0, opacity: 1, rotateX: 0 }}
             exit={{ y: -100, opacity: 0, rotateX: -45 }}
             transition={{ type: "spring", damping: 20 }}
-            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 min-h-[80vh] flex flex-col"
+            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 flex flex-col mx-auto"
           >
             {/* Parchment Burnt Edges Effect */}
             <div className="parchment-edge" />
@@ -378,6 +378,8 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
           border-style: double;
           border-width: 12px;
           border-color: #8d6e63;
+          position: relative; 
+          overflow: visible;
         }
         .parchment-edge {
           position: absolute;

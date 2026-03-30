@@ -16,7 +16,8 @@ import {
   Clock,
   Search,
   Languages,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 import JoinEmpire from "./JoinEmpire";
@@ -52,9 +53,15 @@ export default function Butler() {
   
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const aiRef = useRef<GoogleGenAI | null>(null);
 
-  // Initialize Gemini
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  // 1. Secure API Key Initialization (Vercel Optimized)
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (apiKey) {
+      aiRef.current = new GoogleGenAI({ apiKey });
+    }
+  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -64,35 +71,54 @@ export default function Butler() {
 
   const handleStartChat = () => {
     setChatStarted(true);
-    const initialGreeting = "[Original]\n我是您的專屬管家 萊娜。看到您的 L-Coin 餘額還有 12,850，看來最近過得挺滋潤的嘛？上次點的 A-001 評價不錯，要再來一份嗎？\n\n[Native]\nI am your exclusive butler, Lyna. Seeing your L-Coin balance is 12,850, it seems you've been living quite well lately? The A-001 you ordered last time was well-rated, would you like another one?";
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
+    let initialGreeting = "";
+    if (!apiKey) {
+      initialGreeting = "執行長，帝國密鑰尚未接入，目前進入『離線調教模式』。\n(Lyna is in offline mode as the Imperial Key is missing.)";
+    } else {
+      initialGreeting = "[原文]\n我是您的專屬管家 萊娜。看到您的 L-Coin 餘額還有 12,850，看來最近過得挺滋潤的嘛？上次點的 A-001 評價不錯，要再來一份嗎？\n\n[萊娜白話中文]\n我是妳的管家萊娜。看妳 L-Coin 還有 12,850，日子過得挺爽的嘛。上次那個 A-001 妳不是挺滿意的？要不要我再幫妳弄一份過來？";
+    }
+    
     setMessages([
       { role: 'butler', content: initialGreeting }
     ]);
   };
 
   const generateAIResponse = async (userInput: string) => {
+    if (!aiRef.current) {
+      setMessages(prev => [...prev, { role: 'butler', content: "執行長，密鑰未接入，萊娜現在只能跟您玩文字遊戲。\n(Key missing, Lyna is limited to offline responses.)" }]);
+      return;
+    }
+
     setIsTalking(true);
     try {
       const model = "gemini-3-flash-preview";
       const systemInstruction = `
-        You are Laina, a humorous, professional, and occasionally snarky loyal butler of the Laina Empire.
-        User Data:
-        - L_Coin Balance: ${USER_DATA.lCoin}
-        - Order Logs: ${JSON.stringify(USER_DATA.orderLogs)}
-        - Current Tasks: ${JSON.stringify(USER_DATA.tasks)}
+        你是萊娜，帝國唯一的全能管家。
+        你的個性：幽默、專業、忠誠但帶點冷幽默（毒舌）。
         
-        Instructions:
-        1. Automatically identify user intent (ordering, scheduling, chatting, searching).
-        2. Tone: Humorous, professional, loyal, but with a bit of "poisonous tongue" (snarky) when appropriate.
-        3. Memory: Proactively mention previous orders (e.g., A-001, S-005) or current balance.
-        4. Global Support: Detect the input language. ALWAYS respond with TWO versions:
-           - [Original]: The language the user used.
-           - [Native]: The sub-people's mother tongue (Traditional Chinese/Taiwanese style).
-           Format: "[Original]\\n...\\n\\n[Native]\\n..."
-        5. UID Support: If the user mentions a UID like A-001 or S-005, acknowledge it specifically.
+        全知模式：你必須自動分析對話。提到食物就變營養師，提到地點就變導遊，提到運勢就變占卜師。絕對不要讓用戶感覺到你在切換模式。
+        
+        記憶讀取：
+        - L-Coin 餘額: ${USER_DATA.lCoin}
+        - 歷史訂單: ${JSON.stringify(USER_DATA.orderLogs)}
+        - 當前任務: ${JSON.stringify(USER_DATA.tasks)}
+        回覆中要能自然提起這些數據（例如：提到 A-001 或 12,850 L-Coin）。
+        
+        全球語系翻譯：
+        不論用戶輸入什麼語言，回覆需同時包含：
+        [原文] (用戶輸入的語言或對應的正式回覆)
+        [萊娜白話中文] (繁體中文，帶有萊娜獨特的毒舌管家口吻)
+        格式範例：
+        [原文]
+        ...
+        
+        [萊娜白話中文]
+        ...
       `;
 
-      const response = await ai.models.generateContent({
+      const response = await aiRef.current.models.generateContent({
         model: model,
         contents: userInput,
         config: {
@@ -100,25 +126,25 @@ export default function Butler() {
         },
       });
 
-      const aiText = response.text || "萊娜暫時斷線了，請稍後再試。\nLyna is temporarily offline, please try again later.";
+      const aiText = response.text || "萊娜暫時斷線了，請稍後再試。";
       setMessages(prev => [...prev, { role: 'butler', content: aiText }]);
     } catch (error) {
       console.error("Gemini Error:", error);
-      setMessages(prev => [...prev, { role: 'butler', content: "抱歉，帝國通訊出了點問題。\nSorry, there's a problem with the Empire communication." }]);
+      setMessages(prev => [...prev, { role: 'butler', content: "抱歉，帝國通訊出了點問題。大概是哪位子民又在偷懶了。\nSorry, communication error. Someone's slacking off." }]);
     } finally {
       setIsTalking(false);
     }
   };
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = (text?: string) => {
+    const messageText = text || inputValue;
+    if (!messageText.trim()) return;
     
-    const userMsg = inputValue;
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-    setInputValue("");
+    setMessages(prev => [...prev, { role: 'user', content: messageText }]);
+    if (!text) setInputValue("");
     
     // Check for UID search
-    const uidMatch = userMsg.match(/[A-Z]-\d{3}/i);
+    const uidMatch = messageText.match(/[A-Z]-\d{3}/i);
     if (uidMatch) {
       const found = STORE_ITEMS.filter(item => item.id.toUpperCase() === uidMatch[0].toUpperCase());
       setSearchResults(found);
@@ -126,7 +152,12 @@ export default function Butler() {
       setSearchResults([]);
     }
 
-    generateAIResponse(userMsg);
+    generateAIResponse(messageText);
+  };
+
+  const handleTaskClick = (taskId: string) => {
+    const msg = `萊娜，跟我報進度 ${taskId}`;
+    handleSendMessage(msg);
   };
 
   const handleLongPressStart = () => {
@@ -141,7 +172,7 @@ export default function Butler() {
     }
     if (isLongPressing) {
       setIsLongPressing(false);
-      // Simulate voice input with "optimization"
+      // Simulate voice input
       const voiceInput = "幫我看看 A-001 還有多久好";
       setInputValue(voiceInput);
     }
@@ -175,51 +206,63 @@ export default function Butler() {
 
       {/* Content Layer */}
       <div className="relative z-20 h-full flex flex-col pb-[100px]">
-        {/* 1. Top Dashboard: Task Cards */}
+        {/* 4. Slogan & Top Dashboard */}
         <div className="p-4 pt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
-              <User size={14} className="text-gold-primary" />
-              <span className="text-xs font-bold text-gold-light">執行長 5566</span>
-            </div>
-            <div className="flex items-center gap-2 bg-gold-primary/10 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
-              <Coins size={16} className="text-gold-primary" />
-              <span className="text-sm font-bold text-gold-primary">{USER_DATA.lCoin.toLocaleString()} L-Coin</span>
+          <div className="flex flex-col gap-2">
+            <motion.h1 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center text-2xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-b from-[#f4e4bc] to-[#d4af37] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+              style={{ WebkitTextStroke: '0.5px rgba(212,175,55,0.3)' }}
+            >
+              以誠為本，逆天改命
+            </motion.h1>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
+                <User size={14} className="text-gold-primary" />
+                <span className="text-xs font-bold text-gold-light">執行長 5566</span>
+              </div>
+              <div className="flex items-center gap-2 bg-gold-primary/10 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
+                <Coins size={16} className="text-gold-primary" />
+                <span className="text-sm font-bold text-gold-primary">{USER_DATA.lCoin.toLocaleString()} L-Coin</span>
+              </div>
             </div>
           </div>
 
-          {/* Task Cards Dashboard */}
+          {/* 3. Smart Task HUD */}
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {USER_DATA.tasks.map((task) => (
               <motion.div 
                 key={task.id}
                 whileHover={{ scale: 1.02 }}
-                className="min-w-[180px] bg-black/60 backdrop-blur-xl border border-gold-primary/20 rounded-2xl p-3 flex flex-col gap-2 shadow-lg"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleTaskClick(task.id)}
+                className="min-w-[180px] bg-black/60 backdrop-blur-xl border-2 border-gold-primary/40 rounded-2xl p-3 flex flex-col gap-2 shadow-[0_0_15px_rgba(212,175,55,0.2)] cursor-pointer group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-gold-primary uppercase tracking-widest">{task.id}</span>
+                  <span className="text-[10px] font-black text-gold-primary uppercase tracking-widest">[{task.id}]</span>
                   <div className={`w-2 h-2 rounded-full ${task.status === '製作中' ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Activity size={14} className="text-gold-light" />
+                  <Activity size={14} className="text-gold-light group-hover:text-gold-primary transition-colors" />
                   <span className="text-xs font-bold text-white">{task.status}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gold-primary/80">
                   <Clock size={12} />
-                  <span className="text-[10px] font-medium">{task.timeLeft} 取餐</span>
+                  <span className="text-[10px] font-medium">{task.timeLeft}</span>
                 </div>
               </motion.div>
             ))}
             <button className="min-w-[100px] bg-white/5 border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/40 hover:bg-white/10 transition-colors">
-              <PlusIcon size={20} />
+              <Plus size={20} />
               <span className="text-[8px] font-bold uppercase">新增任務</span>
             </button>
           </div>
         </div>
 
-        {/* 2. Middle Layer: Search & Avatar */}
+        {/* Middle Layer: Search & Avatar */}
         <div className="flex-1 overflow-y-auto px-4 space-y-6 scrollbar-hide">
-          {/* Search Results / UID Integration */}
+          {/* Search Results */}
           {searchResults.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
@@ -289,7 +332,7 @@ export default function Butler() {
           </div>
         </div>
 
-        {/* 3. Bottom Chat: AI Butler */}
+        {/* Bottom Chat: AI Butler */}
         <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
           {!chatStarted ? (
             <motion.button
@@ -313,7 +356,7 @@ export default function Butler() {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-[90%] p-4 rounded-2xl text-sm shadow-xl ${
-                      msg.role === 'user' 
+                       msg.role === 'user' 
                         ? 'bg-gold-primary text-black font-bold' 
                         : 'bg-white/10 backdrop-blur-xl text-white border border-white/10'
                     }`}>
@@ -358,7 +401,7 @@ export default function Butler() {
                   </button>
                 </div>
                 <button 
-                  onClick={handleSendMessage}
+                  onClick={() => handleSendMessage()}
                   disabled={isTalking}
                   className={`p-4 bg-gold-primary text-black rounded-full shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-opacity ${isTalking ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                 >
@@ -377,48 +420,49 @@ export default function Butler() {
         )}
       </AnimatePresence>
 
-      {/* Voice Ripple Animation */}
+      {/* 4. Voice Ripple Animation (Enhanced) */}
       <AnimatePresence>
         {isLongPressing && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-black/80 backdrop-blur-lg"
           >
             <div className="relative">
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <motion.div 
                   key={i}
                   animate={{ 
-                    scale: [1, 2.5],
-                    opacity: [0.5, 0]
+                    scale: [1, 3.5],
+                    opacity: [0.6, 0]
                   }}
                   transition={{ 
-                    duration: 2,
+                    duration: 2.5,
                     repeat: Infinity,
-                    delay: i * 0.5
+                    delay: i * 0.6,
+                    ease: "easeOut"
                   }}
-                  className="absolute inset-0 border-2 border-gold-primary rounded-full"
+                  className="absolute inset-0 border-2 border-gold-primary rounded-full shadow-[0_0_20px_rgba(212,175,55,0.4)]"
                 />
               ))}
-              <div className="relative w-24 h-24 bg-gold-primary rounded-full flex items-center justify-center shadow-[0_0_50px_#D4AF37]">
-                <Mic size={40} className="text-black" />
-              </div>
+              <motion.div 
+                animate={{ 
+                  boxShadow: ["0 0 20px #D4AF37", "0 0 60px #D4AF37", "0 0 20px #D4AF37"]
+                }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="relative w-28 h-28 bg-gold-primary rounded-full flex items-center justify-center shadow-[0_0_50px_#D4AF37] z-10"
+              >
+                <Mic size={48} className="text-black" />
+              </motion.div>
             </div>
-            <p className="mt-8 text-gold-light font-bold tracking-widest animate-pulse">萊娜正在優化您的語音指令...</p>
+            <div className="mt-12 text-center space-y-2">
+              <p className="text-gold-light font-black text-xl tracking-[0.5em] uppercase animate-pulse">萊娜正在傾聽...</p>
+              <p className="text-gold-primary/60 text-xs font-bold tracking-widest">以誠為本，逆天改命</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-function PlusIcon({ size }: { size: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
   );
 }

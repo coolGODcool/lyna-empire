@@ -17,7 +17,10 @@ import {
   Search,
   Languages,
   AlertCircle,
-  Plus
+  Plus,
+  Lock,
+  Crown,
+  ArrowUpRight
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
 import JoinEmpire from "./JoinEmpire";
@@ -50,10 +53,14 @@ export default function Butler() {
   const [isLongPressing, setIsLongPressing] = useState(false);
   const [messages, setMessages] = useState<{ role: 'butler' | 'user', content: string, original?: string }[]>([]);
   const [searchResults, setSearchResults] = useState<typeof STORE_ITEMS>([]);
+  const [userId, setUserId] = useState("User_5566"); // Default to Citizen
+  const [showWalletModal, setShowWalletModal] = useState(false);
   
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const aiRef = useRef<GoogleGenAI | null>(null);
+
+  const isLord = userId.startsWith("Lord_");
 
   // 1. Secure API Key Initialization (Vercel Optimized)
   useEffect(() => {
@@ -77,7 +84,7 @@ export default function Butler() {
     if (!apiKey) {
       initialGreeting = "執行長，帝國密鑰尚未接入，目前進入『離線調教模式』。\n(Lyna is in offline mode as the Imperial Key is missing.)";
     } else {
-      initialGreeting = "[原文]\n我是您的專屬管家 萊娜。看到您的 L-Coin 餘額還有 12,850，看來最近過得挺滋潤的嘛？上次點的 A-001 評價不錯，要再來一份嗎？\n\n[萊娜白話中文]\n我是妳的管家萊娜。看妳 L-Coin 還有 12,850，日子過得挺爽的嘛。上次那個 A-001 妳不是挺滿意的？要不要我再幫妳弄一份過來？";
+      initialGreeting = `[原文]\n我是您的專屬管家 萊娜。看到您的 L-Coin 餘額還有 12,850，看來最近過得挺滋潤的嘛？${isLord ? '身為領主，您的稅收也正在穩定入庫中。' : '上次點的 A-001 評價不錯，要再來一份嗎？'}\n\n[萊娜白話中文]\n我是妳的管家萊娜。看妳 L-Coin 還有 12,850，日子過得挺爽的嘛。${isLord ? '領主大人，稅金我幫妳收得好好的，放心。' : '上次那個 A-001 妳不是挺滿意的？要不要我再幫妳弄一份過來？'}`;
     }
     
     setMessages([
@@ -101,21 +108,19 @@ export default function Butler() {
         全知模式：你必須自動分析對話。提到食物就變營養師，提到地點就變導遊，提到運勢就變占卜師。絕對不要讓用戶感覺到你在切換模式。
         
         記憶讀取：
+        - 用戶身分: ${isLord ? '帝國領主' : '帝國子民'}
         - L-Coin 餘額: ${USER_DATA.lCoin}
         - 歷史訂單: ${JSON.stringify(USER_DATA.orderLogs)}
         - 當前任務: ${JSON.stringify(USER_DATA.tasks)}
-        回覆中要能自然提起這些數據（例如：提到 A-001 或 12,850 L-Coin）。
+        回覆中要能自然提起這些數據。
+        
+        引導加盟邏輯：
+        當用戶（目前為子民身分）詢問關於「賺錢、稅收、開店、創業、財富」等話題時，除了回答，結尾必須幽默地加上：「如果您現在加盟成為領主，這筆交易的規費就不會流向別人的口袋了喔～」
         
         全球語系翻譯：
         不論用戶輸入什麼語言，回覆需同時包含：
         [原文] (用戶輸入的語言或對應的正式回覆)
         [萊娜白話中文] (繁體中文，帶有萊娜獨特的毒舌管家口吻)
-        格式範例：
-        [原文]
-        ...
-        
-        [萊娜白話中文]
-        ...
       `;
 
       const response = await aiRef.current.models.generateContent({
@@ -153,6 +158,16 @@ export default function Butler() {
     }
 
     generateAIResponse(messageText);
+  };
+
+  const handleIdentityClick = () => {
+    if (!isLord) {
+      const lynaMsg = "執行長，您目前仍是子民身分。想晉升領主、開啟專屬稅收嗎？點擊右下角的卷軸，讓我們開始逆天改命！";
+      setMessages(prev => [...prev, { role: 'butler', content: lynaMsg }]);
+    } else {
+      // Navigate to Lord Dashboard (Mock)
+      setMessages(prev => [...prev, { role: 'butler', content: "領主大人，正在為您開啟領主後台... 稅收報表與菜單管理已就緒。" }]);
+    }
   };
 
   const handleTaskClick = (taskId: string) => {
@@ -206,27 +221,72 @@ export default function Butler() {
 
       {/* Content Layer */}
       <div className="relative z-20 h-full flex flex-col pb-[100px]">
-        {/* 4. Slogan & Top Dashboard */}
-        <div className="p-4 pt-6 space-y-4">
-          <div className="flex flex-col gap-2">
-            <motion.h1 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center text-2xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-b from-[#f4e4bc] to-[#d4af37] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-              style={{ WebkitTextStroke: '0.5px rgba(212,175,55,0.3)' }}
-            >
-              以誠為本，逆天改命
-            </motion.h1>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
-                <User size={14} className="text-gold-primary" />
-                <span className="text-xs font-bold text-gold-light">執行長 5566</span>
+        {/* Slogan (Fixed Position) */}
+        <div className="pt-6 pb-2">
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center text-2xl font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-b from-[#f4e4bc] to-[#d4af37] drop-shadow-[0_2px_8px_rgba(0,0,0,1)]"
+            style={{ WebkitTextStroke: '0.5px rgba(212,175,55,0.5)' }}
+          >
+            以誠為本，逆天改命
+          </motion.h1>
+        </div>
+
+        {/* 1. Identity Switcher & Wallet HUD */}
+        <div className="px-4 space-y-4">
+          <div className="flex items-center justify-between bg-black/40 backdrop-blur-xl border border-gold-primary/20 rounded-2xl p-3 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full border border-gold-primary/50 overflow-hidden">
+                  <img src="/IMG_4166.PNG" className="w-full h-full object-cover" alt="User" />
+                </div>
+                {isLord && (
+                  <motion.div 
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute -top-1 -right-1 text-gold-primary"
+                  >
+                    <Crown size={14} fill="currentColor" />
+                  </motion.div>
+                )}
               </div>
-              <div className="flex items-center gap-2 bg-gold-primary/10 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
-                <Coins size={16} className="text-gold-primary" />
-                <span className="text-sm font-bold text-gold-primary">{USER_DATA.lCoin.toLocaleString()} L-Coin</span>
+              <div className="flex flex-col">
+                <span className="text-xs font-black text-white tracking-wider">{isLord ? '領主大人' : '執行長'} 5566</span>
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleIdentityClick}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tighter border ${
+                    isLord 
+                      ? 'bg-gold-primary/20 border-gold-primary text-gold-primary animate-pulse shadow-[0_0_10px_rgba(212,175,55,0.4)]' 
+                      : 'bg-white/5 border-white/20 text-white/40'
+                  }`}
+                >
+                  {isLord ? <Crown size={10} /> : <Lock size={10} />}
+                  {isLord ? '帝國領主' : '帝國子民'}
+                  <ArrowUpRight size={8} />
+                </motion.button>
               </div>
             </div>
+
+            {/* 2. Wallet Display (Unified) */}
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowWalletModal(true)}
+              className="flex items-center gap-2 bg-gold-primary/10 border border-gold-primary/30 rounded-xl px-3 py-2 group"
+            >
+              <motion.div
+                animate={{ rotateY: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              >
+                <Coins size={18} className="text-gold-primary" />
+              </motion.div>
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-black text-gold-primary">{USER_DATA.lCoin.toLocaleString()}</span>
+                <span className="text-[8px] font-bold text-gold-light/60 uppercase tracking-widest">L-Coin</span>
+              </div>
+            </motion.button>
           </div>
 
           {/* 3. Smart Task HUD */}
@@ -237,10 +297,13 @@ export default function Butler() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleTaskClick(task.id)}
-                className="min-w-[180px] bg-black/60 backdrop-blur-xl border-2 border-gold-primary/40 rounded-2xl p-3 flex flex-col gap-2 shadow-[0_0_15px_rgba(212,175,55,0.2)] cursor-pointer group"
+                className="min-w-[160px] bg-black/60 backdrop-blur-xl border-2 border-gold-primary/40 rounded-2xl p-3 flex flex-col gap-2 shadow-[0_0_15px_rgba(212,175,55,0.2)] cursor-pointer group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-gold-primary uppercase tracking-widest">[{task.id}]</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] font-black text-gold-primary uppercase tracking-widest">[{task.id}]</span>
+                    <span className="text-[8px] font-bold text-white/40">STORE</span>
+                  </div>
                   <div className={`w-2 h-2 rounded-full ${task.status === '製作中' ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`} />
                 </div>
                 <div className="flex items-center gap-2">
@@ -253,21 +316,24 @@ export default function Butler() {
                 </div>
               </motion.div>
             ))}
-            <button className="min-w-[100px] bg-white/5 border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/40 hover:bg-white/10 transition-colors">
+            <button 
+              onClick={() => setShowJoinForm(true)}
+              className="min-w-[100px] bg-white/5 border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/40 hover:bg-white/10 transition-colors"
+            >
               <Plus size={20} />
-              <span className="text-[8px] font-bold uppercase">新增任務</span>
+              <span className="text-[8px] font-bold uppercase">加盟領主</span>
             </button>
           </div>
         </div>
 
-        {/* Middle Layer: Search & Avatar */}
+        {/* Middle Layer: Avatar */}
         <div className="flex-1 overflow-y-auto px-4 space-y-6 scrollbar-hide">
           {/* Search Results */}
           {searchResults.length > 0 && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-3"
+              className="space-y-3 mt-4"
             >
               <div className="flex items-center gap-2">
                 <Search size={14} className="text-gold-primary" />
@@ -291,7 +357,7 @@ export default function Butler() {
           )}
 
           {/* Lyna Central Avatar */}
-          <div className="flex flex-col items-center justify-center py-4 space-y-4">
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <div className="relative">
               <motion.div 
                 animate={{ 
@@ -299,7 +365,7 @@ export default function Butler() {
                   boxShadow: isTalking ? ["0 0 20px #D4AF37", "0 0 40px #D4AF37", "0 0 20px #D4AF37"] : "0 0 10px rgba(212,175,55,0.2)"
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-32 h-32 rounded-full border-4 border-gold-primary overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.3)]"
+                className="w-40 h-40 rounded-full border-4 border-gold-primary overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.3)]"
               >
                 <img 
                   src="/IMG_4166.PNG" 
@@ -313,9 +379,9 @@ export default function Butler() {
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setShowJoinForm(true)}
-                className="absolute -bottom-2 -right-2 w-12 h-12 bg-[#f4e4bc] border-2 border-[#8d6e63] rounded-lg flex items-center justify-center shadow-xl z-30"
+                className="absolute -bottom-2 -right-2 w-14 h-14 bg-[#f4e4bc] border-2 border-[#8d6e63] rounded-lg flex items-center justify-center shadow-xl z-30"
               >
-                <ScrollText className="text-[#5d4037]" size={24} />
+                <ScrollText className="text-[#5d4037]" size={28} />
               </motion.button>
             </div>
             
@@ -347,7 +413,7 @@ export default function Butler() {
           ) : (
             <div className="space-y-4">
               {/* Chat Messages */}
-              <div className="max-h-[300px] overflow-y-auto space-y-4 scrollbar-hide mb-4 px-2">
+              <div className="max-h-[250px] overflow-y-auto space-y-4 scrollbar-hide mb-4 px-2">
                 {messages.map((msg, i) => (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
@@ -413,14 +479,48 @@ export default function Butler() {
         </div>
       </div>
 
-      {/* Join Empire Form */}
+      {/* Wallet Modal (Mock) */}
       <AnimatePresence>
-        {showJoinForm && (
-          <JoinEmpire onClose={() => setShowJoinForm(false)} userId="Lord_5566" />
+        {showWalletModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="w-full max-w-sm bg-zinc-900 border border-gold-primary/30 rounded-3xl p-6 space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-gold-primary tracking-widest uppercase">帝國錢包</h2>
+                <button onClick={() => setShowWalletModal(false)} className="p-2 text-white/40 hover:text-white">
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="bg-black/40 rounded-2xl p-6 flex flex-col items-center gap-2 border border-gold-primary/10">
+                <Coins size={48} className="text-gold-primary" />
+                <span className="text-3xl font-black text-white">{USER_DATA.lCoin.toLocaleString()}</span>
+                <span className="text-xs font-bold text-gold-light uppercase tracking-[0.3em]">可用 L-Coin 餘額</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button className="py-4 bg-gold-primary text-black font-black rounded-xl text-sm">立即儲值</button>
+                <button className="py-4 bg-white/5 text-white font-black rounded-xl text-sm border border-white/10">兌換獎勵</button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 4. Voice Ripple Animation (Enhanced) */}
+      {/* Join Empire Form */}
+      <AnimatePresence>
+        {showJoinForm && (
+          <JoinEmpire onClose={() => setShowJoinForm(false)} userId={userId} />
+        )}
+      </AnimatePresence>
+
+      {/* Voice Ripple Animation */}
       <AnimatePresence>
         {isLongPressing && (
           <motion.div 

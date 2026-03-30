@@ -9,6 +9,7 @@ interface JoinEmpireProps {
 
 const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
   const [step, setStep] = useState<"form" | "success">("form");
+  const [showTerms, setShowTerms] = useState(false);
   const [formData, setFormData] = useState({
     storeName: "",
     category: "餐飲",
@@ -131,6 +132,18 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
             </button>
 
             <div className="relative z-10 space-y-8">
+              {/* Soul Logo */}
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 1 }}
+                className="text-center py-4"
+              >
+                <h1 className="soul-logo text-5xl md:text-6xl font-bold tracking-[0.2em]">
+                  以誠為本 逆天改命
+                </h1>
+              </motion.div>
+
               <div className="text-center space-y-2">
                 <h2 className="text-4xl font-black text-[#5d4037] italic tracking-tighter border-b-2 border-[#5d4037]/20 pb-4">萊娜帝國加盟契約</h2>
                 <p className="text-xs text-[#8d6e63] font-bold uppercase tracking-[0.3em]">Imperial Franchise Covenant</p>
@@ -377,6 +390,19 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                     </div>
                   </div>
 
+                  <div className="mt-4 p-4 bg-white/40 border border-[#d4af37]/30 rounded-lg space-y-2">
+                    <p className="text-[11px] font-black text-[#5d4037] flex items-center gap-2">
+                      <Calculator size={14} className="text-[#d4af37]" />
+                      提現出口匯率 (L-Coin Exit Rate)
+                    </p>
+                    <p className="text-[10px] text-[#8d6e63] leading-relaxed">
+                      領主結算權利：領主可隨時申請將帳戶內累積之 L-Coin 結算為新台幣，結算匯率統一為 <span className="font-black text-[#5d4037]">1 : 0.9</span>（例：1,000 L-Coin 可換回 900 元新台幣）。
+                    </p>
+                    <p className="text-[9px] font-bold text-[#5d4037] italic opacity-80 pt-1 border-t border-[#d4af37]/10">
+                      本帝國透過入口 1.05 與出口 0.9 之匯率調控，確保領地生態系之價值穩定與營運維護。
+                    </p>
+                  </div>
+
                   <div className="mt-4 p-3 bg-red-900/5 border border-red-900/20 rounded-lg">
                     <p className="text-[10px] font-bold text-red-900 leading-relaxed flex gap-2">
                       <Info size={14} className="shrink-0" />
@@ -388,48 +414,128 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
 
               {/* 誠信條款與提交 */}
               <div className="pt-6 space-y-6 flex flex-col items-center">
-                <div className="space-y-2 text-center max-w-md">
-                  <label className="flex items-start gap-3 cursor-pointer group">
-                    <input 
-                      type="checkbox" 
-                      className="mt-1 accent-[#5d4037]"
-                      checked={formData.agreed}
-                      onChange={e => setFormData({...formData, agreed: e.target.checked})}
-                    />
-                    <span className="text-[10px] leading-tight text-[#5d4037] font-black opacity-90 group-hover:opacity-100 transition-opacity">
-                      我已閱讀並同意加盟服務條款，承諾誠實經營並確保品質。
-                    </span>
-                  </label>
+                <div className="space-y-4 text-center max-w-md">
+                  <div className="flex flex-col items-center gap-2">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="mt-1 accent-[#5d4037]"
+                        checked={formData.agreed}
+                        onChange={e => setFormData({...formData, agreed: e.target.checked})}
+                      />
+                      <span className="text-[10px] leading-tight text-[#5d4037] font-black opacity-90 group-hover:opacity-100 transition-opacity">
+                        我已閱讀並同意加盟服務條款，承諾誠實經營並確保品質。
+                      </span>
+                    </label>
+                    <button 
+                      onClick={() => setShowTerms(true)}
+                      className="text-[10px] font-black text-[#d4af37] underline decoration-dotted underline-offset-4 hover:text-[#5d4037] transition-colors"
+                    >
+                      查看詳細條文
+                    </button>
+                  </div>
                   <p className="text-[9px] text-red-900 font-bold italic opacity-70">
                     ⚠️ 萊娜帝國以誠信為本。凡蓄意欺瞞營業額者，本帝國保有最終裁決權，得永久撤銷其領主資格。
                   </p>
                 </div>
 
-                <div className="relative">
-                  <motion.button 
-                    whileHover={{ scale: 1.15, rotate: 5 }}
-                    whileTap={{ scale: 0.7, rotate: -10 }}
-                    onClick={handleSubmit}
-                    disabled={!formData.agreed || isStamping}
-                    className={`wax-seal-btn ${formData.agreed ? 'opacity-100' : 'opacity-30 grayscale cursor-not-allowed'}`}
-                  >
-                    <div className="wax-seal-inner shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]">
-                      <span className="text-[#f4e4bc] font-black text-xl tracking-tighter drop-shadow-md">萊娜</span>
-                      <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
-                    </div>
-                  </motion.button>
-                  {isStamping && (
-                    <motion.div 
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 2.5, opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="absolute inset-0 bg-[#b71c1c] rounded-full blur-2xl"
-                    />
-                  )}
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-xs font-black text-[#5d4037] tracking-widest">
+                    提現匯率：<span className="text-lg text-[#5d4037]">1 : 0.9</span>
+                  </p>
+                  <div className="relative">
+                    <motion.button 
+                      animate={isStamping ? {
+                        x: [0, -5, 5, -5, 5, 0],
+                        y: [0, 5, -5, 5, -5, 0],
+                        scale: [1, 0.9, 1.1, 0.9, 1]
+                      } : {}}
+                      transition={isStamping ? { duration: 0.2, repeat: 3 } : {}}
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      whileTap={{ scale: 0.7, rotate: -10 }}
+                      onClick={handleSubmit}
+                      disabled={!formData.agreed || isStamping}
+                      className={`wax-seal-btn ${formData.agreed ? 'opacity-100' : 'opacity-30 grayscale cursor-not-allowed'}`}
+                    >
+                      <div className="wax-seal-inner shadow-[inset_0_0_15px_rgba(0,0,0,0.5)]">
+                        <span className="text-[#f4e4bc] font-black text-xl tracking-tighter drop-shadow-md">萊娜</span>
+                        <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
+                      </div>
+                    </motion.button>
+                    {isStamping && (
+                      <motion.div 
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 3, opacity: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="absolute inset-0 bg-[#b71c1c] rounded-full blur-3xl"
+                      />
+                    )}
+                  </div>
+                  <p className="text-[10px] font-black text-[#5d4037] uppercase tracking-widest">點擊封蠟以完成壓印</p>
                 </div>
-                <p className="text-[10px] font-black text-[#5d4037] uppercase tracking-widest">點擊封蠟以完成壓印</p>
               </div>
             </div>
+
+            {/* Detailed Terms Dialog */}
+            <AnimatePresence>
+              {showTerms && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                >
+                  <motion.div 
+                    initial={{ scale: 0.9, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.9, y: 20 }}
+                    className="parchment max-w-lg w-full p-8 relative max-h-[80vh] overflow-y-auto"
+                  >
+                    <button 
+                      onClick={() => setShowTerms(false)}
+                      className="absolute top-4 right-4 p-2 text-[#5d4037] hover:bg-black/5 rounded-full"
+                    >
+                      <X size={20} />
+                    </button>
+                    
+                    <div className="space-y-6 text-[#5d4037]">
+                      <h3 className="text-2xl font-black italic border-b-2 border-[#5d4037]/20 pb-2">領主加盟服務條約 (v2.2)</h3>
+                      
+                      <div className="space-y-4 text-xs font-bold leading-relaxed">
+                        <section className="space-y-2">
+                          <p className="text-sm font-black text-[#d4af37]">第一條：領主身分與義務</p>
+                          <p>● 身分定義：簽署本契約後，您將正式成為萊娜帝國之「領主」，擁有在其領地（店面）內使用萊娜系統、發放與收受 L-Coin 之權利。</p>
+                          <p>● 數據誠信：領主承諾所有透過萊娜系統產生之交易（含現金、L-Coin、第三方支付）皆須如實申報。</p>
+                          <p>● 品質保證：領主須確保食材品質、環境衛生及服務態度，不得損害帝國形象。</p>
+                        </section>
+
+                        <section className="space-y-2">
+                          <p className="text-sm font-black text-[#d4af37]">第二條：規費與金流結算</p>
+                          <p>● 系統使用費：基礎服務規費為 6.0%（包含 AI 全球語系選單、雲端語音報單、領主戰情室服務）。</p>
+                          <p>● L-Coin 獎勵匯率：為鼓勵貨幣循環，凡子民使用 L-Coin 支付之交易，該筆規費自動調降至 4.0%。</p>
+                          <p>● 第三方金流成本：使用 LINE Pay、信用卡等產生之金流平台手續費（約 3%-3.5%）由領主自行承擔。</p>
+                          <p>● 提現出口匯率：領主申請將累積之 L-Coin 兌換為新台幣（TWD）時，統一採 1 : 0.9 之出口匯率結算。</p>
+                        </section>
+
+                        <section className="space-y-2">
+                          <p className="text-sm font-black text-[#d4af37]">第三條：帝國裁決與違約處分</p>
+                          <p>● 終極裁決權：萊娜帝國保有對系統規費、匯率調整及條文之最終解釋權。</p>
+                          <p>● 誠信判定：若經系統偵測或子民舉報，確認領主有「刻意漏報金額」、「私下回兌現金」或「欺瞞子民」之行為，執行長保有一鍵撤銷領主資格之權力。</p>
+                          <p>● 永久除名：凡違約被撤職者，該領地、UID 將永久黑名單化，且帝國得追究其規費損失之 10 倍損害賠償。</p>
+                        </section>
+                      </div>
+
+                      <button 
+                        onClick={() => setShowTerms(false)}
+                        className="w-full py-3 bg-[#5d4037] text-[#f4e4bc] font-black rounded-xl"
+                      >
+                        我已充分知悉
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
         ) : (
@@ -502,6 +608,14 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
           border: 20px solid transparent;
           border-image: radial-gradient(circle, transparent 70%, rgba(60,40,20,0.2) 100%) 30;
           filter: blur(2px);
+        }
+        .soul-logo {
+          font-family: "Kaiti", "STKaiti", "BiauKai", serif;
+          background: linear-gradient(to bottom, #d4af37 22%, #f4e4bc 45%, #d4af37 50%, #8d6e63 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
         .wax-seal-btn {
           width: 100px;

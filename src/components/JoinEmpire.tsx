@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Check, Info, Calculator, Store, Phone, MapPin, Clock, Image as ImageIcon, FileText, Gift, RotateCcw } from "lucide-react";
+import { X, Check, Info, Calculator, Store, Phone, MapPin, Clock, Image as ImageIcon, FileText, RotateCcw } from "lucide-react";
 
 interface JoinEmpireProps {
   onClose: () => void;
@@ -17,13 +17,13 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
     address: "",
     imageUrl: "",
     description: "",
-    promoCode: "",
-    paymentType: "l-coin", // l-coin, cash
     features: {
+      lcoinPrivilege: true,
+      invoice: false,
       phoneAuto: false,
-      calendar: false,
       aiService: false,
       dashboard: false,
+      design: false,
       marquee: false,
     },
     agreed: false
@@ -42,17 +42,18 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
     }
   };
 
-  // 規費計算邏輯
+  // 規費計算邏輯 (6/4 法則)
   const calculateTax = () => {
-    let base = formData.paymentType === "l-coin" ? 3.0 : 8.0;
-    // 如果是特許價邏輯，初始顯示 4.0% 但 L-Coin 扣減
-    // 根據指令：基礎設施包 (必選 4.0%)，L-Coin 特權 3.0%
+    // 基礎服務使用費：6.0% (含 AI 選單、語音報單)
+    // L-Coin 支付特權：勾選後降至 4.0%
+    let base = formData.features.lcoinPrivilege ? 4.0 : 6.0;
     let total = base;
     
+    if (formData.features.invoice) total += 3.0;
     if (formData.features.phoneAuto) total += 2.0;
-    if (formData.features.calendar) total += 2.0;
     if (formData.features.aiService) total += 3.0;
     if (formData.features.dashboard) total += 2.0;
+    if (formData.features.design) total += 2.0;
     if (formData.features.marquee) total += 1.0;
     
     return total.toFixed(1);
@@ -78,7 +79,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#1a120b] bg-[url('https://www.transparenttextures.com/patterns/dark-wood.png')] overflow-y-auto p-4"
+      className="fixed inset-0 z-[200] bg-[#1a120b] bg-[url('https://www.transparenttextures.com/patterns/dark-wood.png')] overflow-y-auto p-4 flex justify-center"
     >
       <AnimatePresence mode="wait">
         {step === "form" ? (
@@ -88,7 +89,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
             animate={{ y: 0, opacity: 1, rotateX: 0 }}
             exit={{ y: -100, opacity: 0, rotateX: -45 }}
             transition={{ type: "spring", damping: 20 }}
-            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 min-h-[80vh] flex flex-col"
+            className="relative w-full max-w-2xl parchment p-8 md:p-12 my-8 min-h-fit flex flex-col"
           >
             {/* Parchment Burnt Edges Effect */}
             <div className="parchment-edge" />
@@ -209,24 +210,11 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
-                      <Gift size={12} /> 早鳥優惠碼
-                    </label>
-                    <input 
-                      type="text" 
-                      placeholder="輸入 CEO5566 解鎖福利"
-                      className="w-full bg-white/20 border-b-2 border-[#d4af37]/30 focus:border-[#d4af37] outline-none py-2 px-1 text-[#5d4037] font-bold placeholder:text-[#5d4037]/30"
-                      value={formData.promoCode}
-                      onChange={e => setFormData({...formData, promoCode: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black text-[#5d4037]/60 uppercase flex items-center gap-1">
-                      <FileText size={12} /> 菜單簡介
+                      <FileText size={12} /> 領地簡介
                     </label>
                     <textarea 
-                      placeholder="描述您的特色菜單..."
-                      className="w-full bg-white/20 border border-[#d4af37]/30 rounded p-2 focus:border-[#d4af37] outline-none text-[#5d4037] font-medium text-xs h-16"
+                      placeholder="描述您的領地特色..."
+                      className="w-full bg-white/20 border border-[#d4af37]/30 rounded p-2 focus:border-[#d4af37] outline-none text-[#5d4037] font-medium text-xs h-24"
                       value={formData.description}
                       onChange={e => setFormData({...formData, description: e.target.value})}
                     />
@@ -250,41 +238,32 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                 <div className="space-y-3">
                   <div className="p-3 bg-white/40 rounded-lg border border-[#d4af37]/30">
                     <p className="text-xs font-black text-[#5d4037] flex items-center justify-between">
-                      <span>基礎設施包 (必選 4.0%)</span>
-                      <span className="text-[10px] bg-[#d4af37] text-white px-2 py-0.5 rounded">開國特許價</span>
+                      <span>基礎服務使用費 ({formData.features.lcoinPrivilege ? '4.0%' : '6.0%'})</span>
+                      <span className="text-[10px] bg-[#d4af37] text-white px-2 py-0.5 rounded">
+                        {formData.features.lcoinPrivilege ? 'L-Coin 特權價' : '標準規費'}
+                      </span>
                     </p>
-                    <p className="text-[9px] text-[#8d6e63] mt-1">內含：AI八國翻譯、語音報單、L-Coin結算、國際換匯</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button 
-                      onClick={() => setFormData({...formData, paymentType: 'l-coin'})}
-                      className={`p-3 rounded-lg border-2 transition-all text-left ${formData.paymentType === 'l-coin' ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#d4af37]/20 opacity-60'}`}
-                    >
-                      <p className="text-[10px] font-black text-[#5d4037]">L-Coin 支付特權</p>
-                      <p className="text-xs font-bold text-[#d4af37]">規費僅 3.0%</p>
-                    </button>
-                    <button 
-                      onClick={() => setFormData({...formData, paymentType: 'cash'})}
-                      className={`p-3 rounded-lg border-2 transition-all text-left ${formData.paymentType === 'cash' ? 'border-[#5d4037] bg-[#5d4037]/10' : 'border-[#5d4037]/20 opacity-60'}`}
-                    >
-                      <p className="text-[10px] font-black text-[#5d4037]">現金/第三方支付</p>
-                      <p className="text-xs font-bold text-[#8d6e63]">規費 8.0%</p>
-                    </button>
+                    <p className="text-[9px] text-[#8d6e63] mt-1">內含：AI 全球語系動態選單、萊娜語音報單系統</p>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-[10px] font-black text-[#5d4037]/60 uppercase tracking-widest">自由選配模組</p>
+                    <p className="text-[10px] font-black text-[#5d4037]/60 uppercase tracking-widest">功能選配與特權</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <FeatureCheckbox 
+                        label="L-Coin 支付特權 (總規費降至 4.0%)" 
+                        checked={formData.features.lcoinPrivilege} 
+                        onChange={v => setFormData({...formData, features: {...formData.features, lcoinPrivilege: v}})} 
+                        highlight
+                      />
+                      <FeatureCheckbox 
+                        label="電子發票代開 (+3.0%)" 
+                        checked={formData.features.invoice} 
+                        onChange={v => setFormData({...formData, features: {...formData.features, invoice: v}})} 
+                      />
                       <FeatureCheckbox 
                         label="電話自動接單 (+2.0%)" 
                         checked={formData.features.phoneAuto} 
                         onChange={v => setFormData({...formData, features: {...formData.features, phoneAuto: v}})} 
-                      />
-                      <FeatureCheckbox 
-                        label="雙向日曆同步 (+2.0%)" 
-                        checked={formData.features.calendar} 
-                        onChange={v => setFormData({...formData, features: {...formData.features, calendar: v}})} 
                       />
                       <FeatureCheckbox 
                         label="AI 智能客服 (+3.0%)" 
@@ -297,11 +276,23 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                         onChange={v => setFormData({...formData, features: {...formData.features, dashboard: v}})} 
                       />
                       <FeatureCheckbox 
+                        label="視覺美編優化 (+2.0%)" 
+                        checked={formData.features.design} 
+                        onChange={v => setFormData({...formData, features: {...formData.features, design: v}})} 
+                      />
+                      <FeatureCheckbox 
                         label="黑金會員/跑馬燈 (+1.0%)" 
                         checked={formData.features.marquee} 
                         onChange={v => setFormData({...formData, features: {...formData.features, marquee: v}})} 
                       />
                     </div>
+                  </div>
+
+                  <div className="mt-4 p-3 bg-red-900/5 border border-red-900/20 rounded-lg">
+                    <p className="text-[10px] font-bold text-red-900 leading-relaxed flex gap-2">
+                      <Info size={14} className="shrink-0" />
+                      <span>凡透過第三方支付（LINE Pay、信用卡）產生之金流手續費（約 3%-3.5%）需由領主自行負擔，萊娜服務費僅為系統使用規費。</span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -441,7 +432,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
   );
 };
 
-const FeatureCheckbox = ({ label, checked, onChange }: { label: string, checked: boolean, onChange: (v: boolean) => void }) => (
+const FeatureCheckbox = ({ label, checked, onChange, highlight }: { label: string, checked: boolean, onChange: (v: boolean) => void, highlight?: boolean }) => (
   <label className="flex items-center gap-2 cursor-pointer group">
     <div 
       onClick={() => onChange(!checked)}
@@ -449,7 +440,7 @@ const FeatureCheckbox = ({ label, checked, onChange }: { label: string, checked:
     >
       {checked && <Check size={10} className="text-[#f4e4bc]" />}
     </div>
-    <span className={`text-[10px] font-bold transition-colors ${checked ? 'text-[#5d4037]' : 'text-[#5d4037]/50'}`}>{label}</span>
+    <span className={`text-[10px] font-bold transition-colors ${checked ? 'text-[#5d4037]' : 'text-[#5d4037]/50'} ${highlight ? 'text-[#d4af37]' : ''}`}>{label}</span>
   </label>
 );
 

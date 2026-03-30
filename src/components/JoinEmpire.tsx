@@ -499,7 +499,7 @@ const JoinEmpire = ({ onClose, userId }: JoinEmpireProps) => {
                     </button>
                     
                     <div className="space-y-6 text-[#5d4037]">
-                      <h3 className="text-2xl font-black italic border-b-2 border-[#5d4037]/20 pb-2">領主加盟服務條約 (v2.2)</h3>
+                      <h3 className="text-2xl font-black italic border-b-2 border-[#5d4037]/20 pb-2">領主加盟服務條約</h3>
                       
                       <div className="space-y-4 text-xs font-bold leading-relaxed">
                         <section className="space-y-2">

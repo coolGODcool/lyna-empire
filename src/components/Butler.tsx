@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   User, 
-  Store, 
   Coins, 
   ChevronRight, 
   Mic, 
@@ -12,70 +11,122 @@ import {
   X,
   Sparkles,
   MessageSquare,
-  Volume2,
   Activity,
-  FileText,
-  Calculator,
-  Info,
-  ScrollText
+  ScrollText,
+  Clock,
+  Search,
+  Languages,
+  AlertCircle
 } from "lucide-react";
+import { GoogleGenAI } from "@google/genai";
 import JoinEmpire from "./JoinEmpire";
 
-// Mock data for recommended products
-const RECOMMENDED_PRODUCTS = [
-  { id: 1, name: "萊娜精品手沖豆", price: 580, image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&q=80" },
-  { id: 2, name: "五五六六和牛禮盒", price: 3200, image: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=400&q=80" },
-  { id: 3, name: "帝國專屬按摩券", price: 1200, image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80" },
+// Mock data for L_Coin and Order Logs
+const USER_DATA = {
+  lCoin: 12850,
+  orderLogs: [
+    { id: "A-001", name: "萊娜精品手沖豆", date: "2026-03-25", rating: 5 },
+    { id: "S-005", name: "帝國專屬按摩券", date: "2026-03-20", rating: 4 },
+  ],
+  tasks: [
+    { id: "A-001", status: "製作中", timeLeft: "5 分鐘", type: "order" },
+    { id: "S-005", status: "預約中", timeLeft: "明日 14:00", type: "reserve" },
+  ]
+};
+
+// Mock data for UID search
+const STORE_ITEMS = [
+  { id: "A-001", name: "萊娜精品手沖豆", price: 580, image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&q=80" },
+  { id: "S-005", name: "帝國專屬按摩券", price: 1200, image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&q=80" },
+  { id: "W-002", name: "五五六六和牛禮盒", price: 3200, image: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=400&q=80" },
 ];
 
 export default function Butler() {
-  const [isLeaderMode, setIsLeaderMode] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [showCalendarDialog, setShowCalendarDialog] = useState(false);
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const [messages, setMessages] = useState<{ role: 'butler' | 'user', content: string }[]>([]);
+  const [messages, setMessages] = useState<{ role: 'butler' | 'user', content: string, original?: string }[]>([]);
+  const [searchResults, setSearchResults] = useState<typeof STORE_ITEMS>([]);
   
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Marquee updates
-  const updates = [
-    "最新國庫收益：8.5% 成長中",
-    "新加盟主「萊娜咖啡-台中店」正式入駐",
-    "今日執行長 5566 補貼已發放",
-    "五五六六和牛燒肉 預約名額剩餘 3 組"
-  ];
+  // Initialize Gemini
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const handleStartChat = () => {
     setChatStarted(true);
-    setIsTalking(true);
+    const initialGreeting = "[Original]\n我是您的專屬管家 萊娜。看到您的 L-Coin 餘額還有 12,850，看來最近過得挺滋潤的嘛？上次點的 A-001 評價不錯，要再來一份嗎？\n\n[Native]\nI am your exclusive butler, Lyna. Seeing your L-Coin balance is 12,850, it seems you've been living quite well lately? The A-001 you ordered last time was well-rated, would you like another one?";
     setMessages([
-      { role: 'butler', content: "我是您的專屬管家 萊娜，我可以幫您處理心靈聊天、占卜、生活規劃與日曆排程..." }
+      { role: 'butler', content: initialGreeting }
     ]);
-    // Simulate speaking effect
-    setTimeout(() => setIsTalking(false), 3000);
+  };
+
+  const generateAIResponse = async (userInput: string) => {
+    setIsTalking(true);
+    try {
+      const model = "gemini-3-flash-preview";
+      const systemInstruction = `
+        You are Laina, a humorous, professional, and occasionally snarky loyal butler of the Laina Empire.
+        User Data:
+        - L_Coin Balance: ${USER_DATA.lCoin}
+        - Order Logs: ${JSON.stringify(USER_DATA.orderLogs)}
+        - Current Tasks: ${JSON.stringify(USER_DATA.tasks)}
+        
+        Instructions:
+        1. Automatically identify user intent (ordering, scheduling, chatting, searching).
+        2. Tone: Humorous, professional, loyal, but with a bit of "poisonous tongue" (snarky) when appropriate.
+        3. Memory: Proactively mention previous orders (e.g., A-001, S-005) or current balance.
+        4. Global Support: Detect the input language. ALWAYS respond with TWO versions:
+           - [Original]: The language the user used.
+           - [Native]: The sub-people's mother tongue (Traditional Chinese/Taiwanese style).
+           Format: "[Original]\\n...\\n\\n[Native]\\n..."
+        5. UID Support: If the user mentions a UID like A-001 or S-005, acknowledge it specifically.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: model,
+        contents: userInput,
+        config: {
+          systemInstruction: systemInstruction,
+        },
+      });
+
+      const aiText = response.text || "萊娜暫時斷線了，請稍後再試。\nLyna is temporarily offline, please try again later.";
+      setMessages(prev => [...prev, { role: 'butler', content: aiText }]);
+    } catch (error) {
+      console.error("Gemini Error:", error);
+      setMessages(prev => [...prev, { role: 'butler', content: "抱歉，帝國通訊出了點問題。\nSorry, there's a problem with the Empire communication." }]);
+    } finally {
+      setIsTalking(false);
+    }
   };
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
     
-    const newMessages = [...messages, { role: 'user' as const, content: inputValue }];
-    setMessages(newMessages);
+    const userMsg = inputValue;
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setInputValue("");
     
-    // Simulate AI response
-    setIsTalking(true);
-    setTimeout(() => {
-      let response = "好的，我正在為您處理中。";
-      if (inputValue.includes("預約") || inputValue.includes("行程")) {
-        response = "萊娜偵測到您的行程需求，我已經為您規劃好了。";
-        setShowCalendarDialog(true);
-      }
-      setMessages(prev => [...prev, { role: 'butler', content: response }]);
-      setIsTalking(false);
-    }, 1500);
+    // Check for UID search
+    const uidMatch = userMsg.match(/[A-Z]-\d{3}/i);
+    if (uidMatch) {
+      const found = STORE_ITEMS.filter(item => item.id.toUpperCase() === uidMatch[0].toUpperCase());
+      setSearchResults(found);
+    } else {
+      setSearchResults([]);
+    }
+
+    generateAIResponse(userMsg);
   };
 
   const handleLongPressStart = () => {
@@ -90,20 +141,15 @@ export default function Butler() {
     }
     if (isLongPressing) {
       setIsLongPressing(false);
-      // Simulate voice input
-      setInputValue("我想預約明天的按摩行程");
+      // Simulate voice input with "optimization"
+      const voiceInput = "幫我看看 A-001 還有多久好";
+      setInputValue(voiceInput);
     }
-  };
-
-  const handleConfirmCalendar = () => {
-    setShowCalendarDialog(false);
-    // Logic to sync with Google Calendar via GAS would go here
-    alert("行程已成功同步至您的 Google 日曆與店家日曆！");
   };
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-black">
-      {/* Global Background - Lena (Futuristic AI Image) */}
+      {/* Global Background */}
       <div className="absolute inset-0 z-0">
         <img 
           src="/IMG_4166.PNG" 
@@ -114,7 +160,6 @@ export default function Butler() {
             (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&q=80";
           }}
         />
-        {/* Breathing Light Overlay */}
         <motion.div 
           animate={{
             opacity: isTalking ? [0.3, 0.6, 0.3] : [0.1, 0.3, 0.1],
@@ -130,55 +175,79 @@ export default function Butler() {
 
       {/* Content Layer */}
       <div className="relative z-20 h-full flex flex-col pb-[100px]">
-        {/* 1. Top Status: CEO Info */}
+        {/* 1. Top Dashboard: Task Cards */}
         <div className="p-4 pt-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
-              <div className="w-6 h-6 rounded-full bg-gold-primary flex items-center justify-center">
-                <User size={14} className="text-black" />
-              </div>
+              <User size={14} className="text-gold-primary" />
               <span className="text-xs font-bold text-gold-light">執行長 5566</span>
             </div>
             <div className="flex items-center gap-2 bg-gold-primary/10 backdrop-blur-md border border-gold-primary/30 rounded-full px-3 py-1">
               <Coins size={16} className="text-gold-primary" />
-              <span className="text-sm font-bold text-gold-primary">12,850 L-Coin</span>
+              <span className="text-sm font-bold text-gold-primary">{USER_DATA.lCoin.toLocaleString()} L-Coin</span>
             </div>
           </div>
 
-          {/* Marquee */}
-          <div className="w-full overflow-hidden bg-gold-primary/5 border-y border-gold-primary/20 py-1">
-            <motion.div 
-              animate={{ x: ["100%", "-100%"] }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="whitespace-nowrap flex gap-8"
-            >
-              {updates.map((update, idx) => (
-                <span key={idx} className="text-[10px] text-gold-light/80 uppercase tracking-widest">
-                  {update}
-                </span>
-              ))}
-            </motion.div>
+          {/* Task Cards Dashboard */}
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            {USER_DATA.tasks.map((task) => (
+              <motion.div 
+                key={task.id}
+                whileHover={{ scale: 1.02 }}
+                className="min-w-[180px] bg-black/60 backdrop-blur-xl border border-gold-primary/20 rounded-2xl p-3 flex flex-col gap-2 shadow-lg"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-gold-primary uppercase tracking-widest">{task.id}</span>
+                  <div className={`w-2 h-2 rounded-full ${task.status === '製作中' ? 'bg-orange-500 animate-pulse' : 'bg-green-500'}`} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Activity size={14} className="text-gold-light" />
+                  <span className="text-xs font-bold text-white">{task.status}</span>
+                </div>
+                <div className="flex items-center gap-2 text-gold-primary/80">
+                  <Clock size={12} />
+                  <span className="text-[10px] font-medium">{task.timeLeft} 取餐</span>
+                </div>
+              </motion.div>
+            ))}
+            <button className="min-w-[100px] bg-white/5 border border-dashed border-white/20 rounded-2xl flex flex-col items-center justify-center gap-1 text-white/40 hover:bg-white/10 transition-colors">
+              <PlusIcon size={20} />
+              <span className="text-[8px] font-bold uppercase">新增任務</span>
+            </button>
           </div>
         </div>
 
-        {/* 2. Middle Layer: Identity & Functions */}
+        {/* 2. Middle Layer: Search & Avatar */}
         <div className="flex-1 overflow-y-auto px-4 space-y-6 scrollbar-hide">
-          {/* Identity Toggle */}
-          <div className="flex items-center justify-center gap-4 py-2">
-            <span className={`text-xs font-bold transition-colors ${!isLeaderMode ? 'text-gold-primary' : 'text-gray-500'}`}>子民</span>
-            <button 
-              onClick={() => setIsLeaderMode(!isLeaderMode)}
-              className="w-12 h-6 bg-gray-800 rounded-full relative border border-gold-primary/30"
+          {/* Search Results / UID Integration */}
+          {searchResults.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-3"
             >
-              <motion.div 
-                animate={{ x: isLeaderMode ? 24 : 2 }}
-                className="absolute top-1 w-4 h-4 bg-gold-primary rounded-full shadow-[0_0_10px_#D4AF37]"
-              />
-            </button>
-            <span className={`text-xs font-bold transition-colors ${isLeaderMode ? 'text-gold-primary' : 'text-gray-500'}`}>領主</span>
-          </div>
+              <div className="flex items-center gap-2">
+                <Search size={14} className="text-gold-primary" />
+                <h3 className="text-[10px] font-bold text-gold-light uppercase tracking-widest">UID 搜尋結果</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {searchResults.map(item => (
+                  <div key={item.id} className="bg-gold-primary/10 border border-gold-primary/30 rounded-xl p-3 flex items-center gap-3">
+                    <img src={item.image} className="w-12 h-12 rounded-lg object-cover" alt={item.name} />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-white">{item.name}</p>
+                      <p className="text-[10px] text-gold-primary">${item.price}</p>
+                    </div>
+                    <button className="p-2 bg-gold-primary text-black rounded-lg">
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
-          {/* Lyna Central Avatar & Join Button */}
+          {/* Lyna Central Avatar */}
           <div className="flex flex-col items-center justify-center py-4 space-y-4">
             <div className="relative">
               <motion.div 
@@ -197,97 +266,27 @@ export default function Butler() {
                 />
               </motion.div>
               
-              {/* Leader Mode Entry Button */}
-              <AnimatePresence>
-                {isLeaderMode && (
-                  <motion.button 
-                    initial={{ scale: 0, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0, opacity: 0, y: 20 }}
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setShowJoinForm(true)}
-                    className="absolute -bottom-2 -right-2 w-12 h-12 bg-[#f4e4bc] border-2 border-[#8d6e63] rounded-lg flex items-center justify-center shadow-xl z-30"
-                  >
-                    <ScrollText className="text-[#5d4037]" size={24} />
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#b71c1c] rounded-full border border-[#f4e4bc]" />
-                  </motion.button>
-                )}
-              </AnimatePresence>
+              <motion.button 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowJoinForm(true)}
+                className="absolute -bottom-2 -right-2 w-12 h-12 bg-[#f4e4bc] border-2 border-[#8d6e63] rounded-lg flex items-center justify-center shadow-xl z-30"
+              >
+                <ScrollText className="text-[#5d4037]" size={24} />
+              </motion.button>
             </div>
             
             {isTalking && (
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-gold-light text-[10px] font-bold tracking-[0.2em] uppercase"
+                className="flex items-center gap-2 text-gold-light text-[10px] font-bold tracking-[0.2em] uppercase"
               >
-                Lyna is speaking...
+                <Languages size={12} />
+                Lyna is translating...
               </motion.div>
             )}
           </div>
-
-          {/* Franchise Button - Removed as it's replaced by the parchment icon */}
-
-          {/* Conditional Content: Recommended Products or Territory Dashboard */}
-          {!isLeaderMode ? (
-            /* Recommended Products for Citizens */
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-gold-primary" />
-                <h3 className="text-xs font-bold text-gold-light uppercase tracking-widest">萊娜管家推薦</h3>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                {RECOMMENDED_PRODUCTS.map((product) => (
-                  <motion.div 
-                    key={product.id}
-                    whileHover={{ y: -5 }}
-                    className="min-w-[160px] bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden"
-                  >
-                    <img src={product.image} alt={product.name} className="w-full h-24 object-cover" />
-                    <div className="p-3">
-                      <h4 className="text-xs font-bold text-white truncate">{product.name}</h4>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-gold-primary font-bold text-sm">${product.price}</span>
-                        <button className="p-1 bg-gold-primary/20 rounded-lg">
-                          <ChevronRight size={14} className="text-gold-primary" />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-              {/* Added Spiritual Consultation for Citizens */}
-              <button className="w-full py-3 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-gold-light/80 hover:bg-white/10 transition-colors">
-                <Sparkles size={14} className="text-gold-primary" />
-                萊娜心靈諮詢
-              </button>
-            </div>
-          ) : (
-            /* Territory Management Dashboard for Franchisees */
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Activity size={16} className="text-gold-primary" />
-                <h3 className="text-xs font-bold text-gold-light uppercase tracking-widest">領地經營看板</h3>
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div className="glass-card p-4 flex items-center justify-between border-gold-primary/20">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="text-gold-primary" size={20} />
-                    <span className="text-sm font-medium text-white">店家 Google 日曆狀態</span>
-                  </div>
-                  <span className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-md">已連線</span>
-                </div>
-                <div className="glass-card p-4 flex items-center justify-between border-gold-primary/20">
-                  <div className="flex items-center gap-3">
-                    <Check className="text-gold-primary" size={20} />
-                    <span className="text-sm font-medium text-white">8% 自動扣款授權</span>
-                  </div>
-                  <span className="text-xs font-bold text-gold-primary bg-gold-primary/10 px-2 py-1 rounded-md">已啟用</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* 3. Bottom Chat: AI Butler */}
@@ -299,13 +298,13 @@ export default function Butler() {
               onClick={handleStartChat}
               className="w-full py-4 bg-gold-primary text-black font-black rounded-2xl shadow-[0_0_40px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3 text-lg"
             >
-              <MessageSquare size={24} />
-              開始與萊娜對話
+              <Sparkles size={24} />
+              喚醒子民管家
             </motion.button>
           ) : (
             <div className="space-y-4">
               {/* Chat Messages */}
-              <div className="max-h-[200px] overflow-y-auto space-y-3 scrollbar-hide mb-4">
+              <div className="max-h-[300px] overflow-y-auto space-y-4 scrollbar-hide mb-4 px-2">
                 {messages.map((msg, i) => (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
@@ -313,24 +312,28 @@ export default function Butler() {
                     key={i} 
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                    <div className={`max-w-[90%] p-4 rounded-2xl text-sm shadow-xl ${
                       msg.role === 'user' 
-                        ? 'bg-gold-primary text-black font-medium' 
-                        : 'bg-white/10 backdrop-blur-md text-white border border-white/10'
+                        ? 'bg-gold-primary text-black font-bold' 
+                        : 'bg-white/10 backdrop-blur-xl text-white border border-white/10'
                     }`}>
-                      {msg.content}
+                      <div className="whitespace-pre-wrap leading-relaxed">
+                        {msg.content}
+                      </div>
                     </div>
                   </motion.div>
                 ))}
                 {isTalking && (
                   <div className="flex justify-start">
-                    <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl flex gap-1">
-                      <motion.div animate={{ scaleY: [1, 2, 1] }} transition={{ repeat: Infinity, duration: 0.5 }} className="w-1 h-3 bg-gold-primary" />
-                      <motion.div animate={{ scaleY: [1, 2, 1] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }} className="w-1 h-3 bg-gold-primary" />
-                      <motion.div animate={{ scaleY: [1, 2, 1] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.2 }} className="w-1 h-3 bg-gold-primary" />
+                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl flex gap-1 items-center">
+                      <motion.div animate={{ height: [8, 16, 8] }} transition={{ repeat: Infinity, duration: 0.5 }} className="w-1 bg-gold-primary" />
+                      <motion.div animate={{ height: [8, 16, 8] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }} className="w-1 bg-gold-primary" />
+                      <motion.div animate={{ height: [8, 16, 8] }} transition={{ repeat: Infinity, duration: 0.5, delay: 0.2 }} className="w-1 bg-gold-primary" />
+                      <span className="ml-2 text-[10px] text-gold-light font-bold uppercase">Thinking...</span>
                     </div>
                   </div>
                 )}
+                <div ref={chatEndRef} />
               </div>
 
               {/* Input Area */}
@@ -341,8 +344,8 @@ export default function Butler() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="輸入訊息或長按語音..."
-                    className="w-full bg-white/5 border border-white/10 rounded-full py-3 px-5 text-white text-sm focus:outline-none focus:border-gold-primary/50 transition-colors"
+                    placeholder="輸入 UID 或指令 (如: A-001)..."
+                    className="w-full bg-white/5 border border-white/10 rounded-full py-4 px-6 text-white text-sm focus:outline-none focus:border-gold-primary/50 transition-colors pr-12"
                   />
                   <button 
                     onMouseDown={handleLongPressStart}
@@ -351,14 +354,15 @@ export default function Butler() {
                     onTouchEnd={handleLongPressEnd}
                     className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-colors ${isLongPressing ? 'bg-gold-primary text-black' : 'text-gold-primary hover:bg-white/10'}`}
                   >
-                    <Mic size={18} />
+                    <Mic size={20} />
                   </button>
                 </div>
                 <button 
                   onClick={handleSendMessage}
-                  className="p-3 bg-gold-primary text-black rounded-full shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                  disabled={isTalking}
+                  className={`p-4 bg-gold-primary text-black rounded-full shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-opacity ${isTalking ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
                 >
-                  <Send size={18} />
+                  <Send size={20} />
                 </button>
               </div>
             </div>
@@ -366,55 +370,14 @@ export default function Butler() {
         </div>
       </div>
 
-      {/* 4. Calendar Dialog */}
-      <AnimatePresence>
-        {showCalendarDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm bg-black-matte border border-gold-primary/50 rounded-3xl p-6 space-y-6 shadow-[0_0_50px_rgba(212,175,55,0.3)]"
-            >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-gold-primary/20 flex items-center justify-center border border-gold-primary/50">
-                  <Calendar size={32} className="text-gold-primary" />
-                </div>
-                <h3 className="text-xl font-bold text-gold-light">日曆同步請求</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  萊娜偵測到您的行程需求，是否同意將此行程寫入您的 Google 日曆？
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  onClick={() => setShowCalendarDialog(false)}
-                  className="py-3 rounded-xl border border-white/10 text-white font-bold flex items-center justify-center gap-2"
-                >
-                  <X size={18} />
-                  取消
-                </button>
-                <button 
-                  onClick={handleConfirmCalendar}
-                  className="py-3 rounded-xl bg-gold-primary text-black font-bold flex items-center justify-center gap-2"
-                >
-                  <Check size={18} />
-                  {isLeaderMode ? "同步到店務日曆" : "同步到我的日曆"}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* 5. Join Empire Form */}
+      {/* Join Empire Form */}
       <AnimatePresence>
         {showJoinForm && (
           <JoinEmpire onClose={() => setShowJoinForm(false)} userId="Lord_5566" />
         )}
       </AnimatePresence>
 
-      {/* Full Screen Voice Ripple Animation */}
+      {/* Voice Ripple Animation */}
       <AnimatePresence>
         {isLongPressing && (
           <motion.div 
@@ -428,7 +391,7 @@ export default function Butler() {
                 <motion.div 
                   key={i}
                   animate={{ 
-                    scale: [1, 2],
+                    scale: [1, 2.5],
                     opacity: [0.5, 0]
                   }}
                   transition={{ 
@@ -443,10 +406,19 @@ export default function Butler() {
                 <Mic size={40} className="text-black" />
               </div>
             </div>
-            <p className="mt-8 text-gold-light font-bold tracking-widest animate-pulse">正在聆聽您的指令...</p>
+            <p className="mt-8 text-gold-light font-bold tracking-widest animate-pulse">萊娜正在優化您的語音指令...</p>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function PlusIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
   );
 }

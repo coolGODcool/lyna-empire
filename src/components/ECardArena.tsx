@@ -527,6 +527,55 @@ export default function ECardArena() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* 特別的 10x LynaCoin WIN! 與 底層逆襲！ */}
+              <AnimatePresence>
+                {roundWinner === "PLAYER" && playerPlayedCard?.type === "SERF" && aiPlayedCard?.type === "MANAGER" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-red-600/30 backdrop-blur-sm"
+                  >
+                    {/* 噴發的金幣粒子群 */}
+                    {[...Array(50)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ y: 0, x: 0, opacity: 1 }}
+                        animate={{ 
+                          y: [0, -200, 600], 
+                          x: (Math.random() - 0.5) * 800,
+                          rotate: 360 
+                        }}
+                        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: Math.random() }}
+                        className="absolute text-yellow-400"
+                      >
+                        <Coins size={32} fill="currentColor" />
+                      </motion.div>
+                    ))}
+                    
+                    {/* 特寫文字 */}
+                    <motion.div
+                      initial={{ scale: 0.5, rotate: -10 }}
+                      animate={{ scale: [1, 1.5, 1.2], rotate: [0, 10, 0] }}
+                      className="text-center"
+                    >
+                      <h2 className="text-6xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+                        逆 天 改 命
+                      </h2>
+                      <p className="text-yellow-400 text-2xl font-bold mt-4">
+                        獲得 450% 獎金！(已代扣 10% 規費)
+                      </p>
+                      <button 
+                        onClick={resetGame}
+                        className="mt-12 px-8 py-3 bg-white text-red-600 font-black rounded-full shadow-2xl hover:scale-110 transition-transform"
+                      >
+                        收下賞金
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* 玩家手牌區 */}

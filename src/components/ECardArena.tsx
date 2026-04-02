@@ -124,7 +124,7 @@ export default function ECardArena() {
     }
     setLCoinBalance(prev => prev - totalBet);
     setGameState("PLAYING");
-    setMessage("請選擇一張卡片進入角力場...");
+    setMessage("請選擇一張卡片進入職場...");
   };
 
   // 觸覺反饋
@@ -312,7 +312,7 @@ export default function ECardArena() {
             <Swords className="text-gold-primary" size={20} />
           </div>
           <div>
-            <h1 className="text-sm font-black tracking-widest uppercase text-gold-light">E-Card 角力場</h1>
+            <h1 className="text-sm font-black tracking-widest uppercase text-gold-light">E-Card 職場</h1>
             <p className="text-[10px] text-white/40 font-bold uppercase">Class Rebellion</p>
           </div>
         </div>
@@ -422,7 +422,7 @@ export default function ECardArena() {
                 onClick={handleStartGame}
                 className="w-full py-4 bg-gold-primary text-black font-black rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:scale-105 transition-transform"
               >
-                進入角力場
+                進入職場
               </button>
               <button onClick={() => setGameState("SIDE_SELECTION")} className="w-full text-xs font-bold text-white/40 hover:text-white transition-colors">重新選擇陣營</button>
             </div>

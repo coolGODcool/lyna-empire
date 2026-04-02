@@ -124,7 +124,7 @@ export default function ECardArena() {
     }
     setLCoinBalance(prev => prev - totalBet);
     setGameState("PLAYING");
-    setMessage("請選擇一張卡片進入職場...");
+    setMessage("請選擇一張卡片進入角力場...");
   };
 
   // 觸覺反饋
@@ -230,13 +230,12 @@ export default function ECardArena() {
     const isManager = card.type === "MANAGER";
     const isSerf = card.type === "SERF";
     const isSalaryman = card.type === "SALARYMAN";
-
     const skin = SKINS.find(s => s.id === card.skinId) || SKINS[0];
 
     return (
       <motion.div
         whileHover={!card.isUsed && !isHidden ? { scale: 1.05, y: -10 } : {}}
-        className={`relative ${isLarge ? 'w-48 h-72' : 'w-28 h-40'} rounded-xl border-2 flex flex-col items-center justify-center overflow-hidden shadow-2xl
+        className={`relative ${isLarge ? 'w-48 h-72' : 'w-28 h-40'} rounded-xl border-2 flex flex-col items-center justify-center overflow-hidden shadow-2xl transition-all duration-500
           ${card.isUsed ? 'opacity-30 grayscale' : 'opacity-100'}
           ${isManager ? 'border-yellow-500 bg-gradient-to-br from-yellow-900/80 to-black shadow-[0_0_20px_rgba(234,179,8,0.4)]' : ''}
           ${isSerf ? 'border-red-600 bg-gradient-to-br from-red-950/80 to-black shadow-[0_0_20px_rgba(220,38,38,0.4)]' : ''}
@@ -245,19 +244,21 @@ export default function ECardArena() {
         `}
       >
         {isHidden ? (
-          <div className="flex flex-col items-center gap-2">
+          /* 鎖定狀態：顯示護盾 */
+          <div className="flex flex-col items-center gap-4">
             <Shield className="text-zinc-700" size={isLarge ? 64 : 32} />
-            <div className="w-full h-1 bg-zinc-800 animate-pulse" />
+            <div className="w-24 h-1 bg-zinc-800 animate-pulse rounded-full" />
           </div>
         ) : (
+          /* 揭曉狀態：顯示階級造型 */
           <>
-            <div className={`absolute top-2 left-2 text-[10px] font-black uppercase tracking-widest ${isManager ? 'text-yellow-500' : isSerf ? 'text-red-500' : 'text-blue-400'}`}>
-              {card.type}
+            <div className={`absolute top-2 left-2 text-[10px] font-black uppercase tracking-widest z-20 ${isManager ? 'text-yellow-500' : isSerf ? 'text-red-500' : 'text-blue-400'}`}>
+              {card.type === "MANAGER" ? "天龍 Elite" : card.type === "SERF" ? "89 牛馬" : "肝苦工程師"}
             </div>
             
             <div className="relative z-10 flex flex-col items-center">
-              {isManager && <GlassWater className="text-yellow-500 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" size={isLarge ? 80 : 40} />}
-              {isSerf && <Bike className="text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]" size={isLarge ? 80 : 40} />}
+              {isManager && <GlassWater className="text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]" size={isLarge ? 80 : 40} />}
+              {isSerf && <Bike className="text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.6)]" size={isLarge ? 80 : 40} />}
               {isSalaryman && <Code className="text-blue-400" size={isLarge ? 80 : 40} />}
               
               <div className="mt-4 text-center px-2">
@@ -265,29 +266,28 @@ export default function ECardArena() {
                   {skin.name}
                 </p>
                 {isLarge && (
-                  <p className="text-[8px] mt-1 text-white/40 leading-tight">
+                  <p className="text-[8px] mt-2 text-white/40 leading-tight italic">
                     {skin.description}
                   </p>
                 )}
               </div>
             </div>
 
-            {/* 視覺音效提示 */}
+            {/* 揭曉瞬間的文字噴發效果 */}
             {isLarge && gameState === "ROUND_RESULT" && (
               <motion.div 
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1.5, opacity: 1 }}
-                className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+                className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
               >
-                <span className={`text-2xl font-black italic uppercase tracking-widest drop-shadow-lg ${isManager ? 'text-yellow-500' : isSerf ? 'text-red-500' : 'text-blue-400'}`}>
-                  {isManager ? "Clink!" : isSerf ? "VROOOOM!" : "Click-clack!"}
+                <span className={`text-3xl font-black italic uppercase tracking-widest drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] ${isManager ? 'text-yellow-400' : isSerf ? 'text-red-500' : 'text-blue-400'}`}>
+                  {isManager ? "Clink!🍷" : isSerf ? "VROOOM!🛵" : "Click-clack!⌨️"}
                 </span>
               </motion.div>
             )}
 
-            {/* 裝飾線 */}
             <div className={`absolute bottom-0 left-0 w-full h-1 ${isManager ? 'bg-yellow-500' : isSerf ? 'bg-red-600' : 'bg-blue-400'}`} />
-            <div className="absolute top-0 left-0 w-full h-full bg-white/5 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
           </>
         )}
       </motion.div>
@@ -312,7 +312,7 @@ export default function ECardArena() {
             <Swords className="text-gold-primary" size={20} />
           </div>
           <div>
-            <h1 className="text-sm font-black tracking-widest uppercase text-gold-light">E-Card 職場</h1>
+            <h1 className="text-sm font-black tracking-widest uppercase text-gold-light">E-Card 角力場</h1>
             <p className="text-[10px] text-white/40 font-bold uppercase">Class Rebellion</p>
           </div>
         </div>
@@ -422,7 +422,7 @@ export default function ECardArena() {
                 onClick={handleStartGame}
                 className="w-full py-4 bg-gold-primary text-black font-black rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] hover:scale-105 transition-transform"
               >
-                進入職場
+                進入角力場
               </button>
               <button onClick={() => setGameState("SIDE_SELECTION")} className="w-full text-xs font-bold text-white/40 hover:text-white transition-colors">重新選擇陣營</button>
             </div>

@@ -18,7 +18,14 @@ import {
   Sparkles,
   ShoppingBag,
   GanttChartSquare,
-  X
+  X,
+  Loader2,
+  Infinity as InfinityIcon,
+  FileText,
+  Printer,
+  Zap as ZapIcon,
+  Flame,
+  Hammer
 } from "lucide-react";
 
 /**
@@ -73,6 +80,7 @@ export default function ECardArena() {
   const [lCoinBalance, setLCoinBalance] = useState(12850); 
   const [message, setMessage] = useState("");
   const [showGacha, setShowGacha] = useState(false);
+  const [battleEffect, setBattleEffect] = useState<"DRAW" | "ENGINEER_WIN" | "EPIC_WIN" | null>(null);
   const [ownedSkins, setOwnedSkins] = useState<string[]>(["default_serf", "default_salaryman", "default_manager"]);
   const [equippedSkins, setEquippedSkins] = useState<Record<CardType, string>>({
     SERF: "default_serf",
@@ -179,15 +187,30 @@ export default function ECardArena() {
       setAiHand(prev => prev.map(c => c.id === aCard.id ? { ...c, isUsed: true } : c));
 
       if (winner !== "DRAW") {
+        // 判斷特殊獲勝特效
+        if (pCard.type === "SERF" && aCard.type === "MANAGER") {
+          setBattleEffect("EPIC_WIN");
+          if (window.navigator.vibrate) window.navigator.vibrate([200, 50, 200, 50, 500]); // 模擬排氣管
+        } else if (pCard.type === "SALARYMAN" && aCard.type === "SERF") {
+          setBattleEffect("ENGINEER_WIN");
+        }
+        
         setGameState("GAME_OVER");
         handleGameEnd(winner);
       } else {
+        // 平局特效
+        if (pCard.type === "SALARYMAN") {
+          setBattleEffect("DRAW");
+          if (window.navigator.vibrate) window.navigator.vibrate([30, 50, 30]);
+        }
+        
         setGameState("ROUND_RESULT");
         setTimeout(() => {
           setRound(prev => prev + 1);
           setPlayerPlayedCard(null);
           setAiPlayedCard(null);
           setRoundWinner(null);
+          setBattleEffect(null);
           setGameState("PLAYING");
         }, 3000);
       }
@@ -222,6 +245,7 @@ export default function ECardArena() {
     setPlayerPlayedCard(null);
     setAiPlayedCard(null);
     setRoundWinner(null);
+    setBattleEffect(null);
     setMessage("");
   };
 
@@ -498,79 +522,241 @@ export default function ECardArena() {
                 )}
               </AnimatePresence>
 
-              {/* 結果覆蓋層 */}
+              {/* 1. 平局特效：【爆肝循環】 */}
               <AnimatePresence>
-                {gameState === "GAME_OVER" && (
-                  <motion.div
-                    initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-                    animate={{ opacity: 1, backdropFilter: "blur(10px)" }}
-                    className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 p-8 space-y-6"
-                  >
-                    <motion.div
-                      initial={{ scale: 0.5, y: 20 }}
-                      animate={{ scale: 1, y: 0 }}
-                      className="text-center space-y-2"
-                    >
-                      <Trophy className="mx-auto text-gold-primary mb-4" size={64} />
-                      <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
-                        {roundWinner === "PLAYER" ? "勝利！" : "敗北"}
-                      </h2>
-                      <p className="text-gold-light font-bold">{message}</p>
-                    </motion.div>
-                    
-                    <button
-                      onClick={resetGame}
-                      className="px-12 py-4 bg-gold-primary text-black font-black rounded-2xl shadow-xl hover:scale-105 transition-transform"
-                    >
-                      返回大廳
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* 特別的 10x LynaCoin WIN! 與 底層逆襲！ */}
-              <AnimatePresence>
-                {roundWinner === "PLAYER" && playerPlayedCard?.type === "SERF" && aiPlayedCard?.type === "MANAGER" && (
+                {battleEffect === "DRAW" && (
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-red-600/30 backdrop-blur-sm"
+                    className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none overflow-hidden"
                   >
-                    {/* 噴發的金幣粒子群 */}
-                    {[...Array(50)].map((_, i) => (
+                    <div className="absolute inset-0 bg-green-900/10 backdrop-blur-[2px] mix-blend-overlay" />
+                    {/* 程式碼雨 */}
+                    <div className="absolute inset-0 opacity-20 flex justify-around">
+                      {[...Array(10)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ y: -100 }}
+                          animate={{ y: 800 }}
+                          transition={{ duration: 2, repeat: Infinity, delay: i * 0.2, ease: "linear" }}
+                          className="text-[8px] font-mono text-green-500 writing-vertical"
+                        >
+                          {Math.random().toString(2).substring(2, 15)}
+                        </motion.div>
+                      ))}
+                    </div>
+                    <div className="relative flex flex-col items-center gap-4">
                       <motion.div
-                        key={i}
-                        initial={{ y: 0, x: 0, opacity: 1 }}
-                        animate={{ 
-                          y: [0, -200, 600], 
-                          x: (Math.random() - 0.5) * 800,
-                          rotate: 360 
-                        }}
-                        transition={{ duration: 1.5, repeat: Infinity, repeatDelay: Math.random() }}
-                        className="absolute text-yellow-400"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       >
-                        <Coins size={32} fill="currentColor" />
+                        <InfinityIcon size={64} className="text-zinc-400 drop-shadow-[0_0_15px_rgba(161,161,170,0.5)]" />
                       </motion.div>
-                    ))}
-                    
-                    {/* 特寫文字 */}
-                    <motion.div
-                      initial={{ scale: 0.5, rotate: -10 }}
-                      animate={{ scale: [1, 1.5, 1.2], rotate: [0, 10, 0] }}
-                      className="text-center"
+                      <motion.p 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-xl font-black text-zinc-400 italic tracking-widest uppercase"
+                      >
+                        無效加班... 回合重來
+                      </motion.p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 2. 工程師 壓制 89牛馬：【社會教訓】 */}
+              <AnimatePresence>
+                {battleEffect === "ENGINEER_WIN" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="absolute inset-0 bg-blue-900/20 backdrop-blur-sm" />
+                    <motion.div 
+                      initial={{ scale: 2, opacity: 0, rotate: -5 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="relative bg-white/90 p-8 border-4 border-blue-600 shadow-[0_0_50px_rgba(37,99,235,0.5)] max-w-[280px] text-black"
                     >
-                      <h2 className="text-6xl font-black text-white italic drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+                      <div className="flex items-center gap-2 mb-4 border-b-2 border-black pb-2">
+                        <FileText size={24} />
+                        <span className="font-black text-sm uppercase">勞動契約增項條款</span>
+                      </div>
+                      <p className="text-[10px] font-serif leading-relaxed mb-4">
+                        依據帝國勞動法第 89 條，知識勞動者對體力勞動者具有絕對指導權。本合約即刻生效，乙方（89牛馬）需無條件接受社會教訓。
+                      </p>
+                      <div className="flex justify-between items-end">
+                        <div className="w-20 h-8 border border-black/20 flex items-center justify-center text-[8px] italic">甲方簽章</div>
+                        <Printer size={32} className="text-blue-600 animate-pulse" />
+                      </div>
+                      <motion.div 
+                        initial={{ x: -100, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="absolute -bottom-12 left-0 right-0 text-center"
+                      >
+                        <span className="text-blue-400 font-black text-lg drop-shadow-lg">「知識就是力量，給我回去跑單。」</span>
+                      </motion.div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 3. 終極逆襲特效：【底層怒火】 */}
+              <AnimatePresence>
+                {battleEffect === "EPIC_WIN" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
+                  >
+                    {/* Phase 1: 黑白漫畫風定格 */}
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.1 }}
+                      className="absolute inset-0 bg-white mix-blend-difference grayscale contrast-[200%]"
+                    />
+                    
+                    {/* Phase 2: 破碎效果 (模擬) */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {[...Array(12)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ scale: 0, x: 0, y: 0, rotate: 0 }}
+                          animate={{ 
+                            scale: [0, 1.5, 0], 
+                            x: (Math.random() - 0.5) * 1000, 
+                            y: (Math.random() - 0.5) * 1000,
+                            rotate: 720 
+                          }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="absolute w-16 h-16 bg-gradient-to-br from-yellow-200 to-transparent clip-path-shards opacity-60"
+                        />
+                      ))}
+                    </div>
+
+                    {/* Phase 3: 火花噴濺 */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {[...Array(30)].map((_, i) => (
+                        <motion.div
+                          key={`spark-${i}`}
+                          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                          animate={{ 
+                            x: (Math.random() - 0.5) * 600, 
+                            y: (Math.random() - 0.5) * 600,
+                            opacity: 0,
+                            scale: 0
+                          }}
+                          transition={{ duration: 0.8, ease: "circOut", delay: 0.5 }}
+                          className="absolute w-1 h-1 bg-orange-400 shadow-[0_0_10px_#fb923c]"
+                        />
+                      ))}
+                    </div>
+
+                    {/* Phase 4: 報金幣 (噴射感) */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      {[...Array(60)].map((_, i) => (
+                        <motion.div
+                          key={`coin-${i}`}
+                          initial={{ scale: 0, x: 0, y: 0 }}
+                          animate={{ 
+                            scale: [0, 1.2, 0.8], 
+                            x: (Math.random() - 0.5) * 1200, 
+                            y: [0, -400, 800],
+                            rotate: 1080
+                          }}
+                          transition={{ 
+                            duration: 1.5, 
+                            delay: 0.8 + Math.random() * 0.5,
+                            ease: "backOut"
+                          }}
+                          className="absolute text-yellow-400 blur-[0.5px]"
+                        >
+                          <Coins size={40} fill="currentColor" className="drop-shadow-[0_0_10px_rgba(234,179,8,0.8)]" />
+                        </motion.div>
+                      ))}
+                    </div>
+                    
+                    {/* 特寫文字：草根書法 */}
+                    <motion.div
+                      initial={{ scale: 5, opacity: 0, rotate: -20 }}
+                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                      transition={{ type: "spring", damping: 12, delay: 0.6 }}
+                      className="relative z-50 text-center"
+                    >
+                      <h2 className="text-8xl font-black text-white italic drop-shadow-[0_0_30px_rgba(255,0,0,1)] tracking-tighter filter brightness-125">
                         逆 天 改 命
                       </h2>
-                      <p className="text-yellow-400 text-2xl font-bold mt-4">
-                        獲得 450% 獎金！(已代扣 10% 規費)
-                      </p>
+                      <motion.div 
+                        animate={{ x: [-2, 2, -2] }}
+                        transition={{ repeat: Infinity, duration: 0.1 }}
+                        className="mt-6 bg-gradient-to-r from-transparent via-red-600 to-transparent py-2"
+                      >
+                        <p className="text-yellow-400 text-3xl font-black uppercase tracking-[0.3em]">
+                          Epic Rebellion Win!
+                        </p>
+                      </motion.div>
                       <button 
                         onClick={resetGame}
-                        className="mt-12 px-8 py-3 bg-white text-red-600 font-black rounded-full shadow-2xl hover:scale-110 transition-transform"
+                        className="mt-16 px-16 py-5 bg-white text-red-600 font-black text-xl rounded-full shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-110 transition-transform active:scale-95"
                       >
                         收下賞金
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 舊有的結果覆蓋層 (僅在非特殊特效時顯示) */}
+              <AnimatePresence>
+                {gameState === "GAME_OVER" && !battleEffect && (
+                  <motion.div
+                    initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                    animate={{ opacity: 1, backdropFilter: "blur(10px)" }}
+                    exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+                    className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 p-8 text-center"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.8, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      className="bg-zinc-900 border-2 border-gold-primary/30 rounded-3xl p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-xs w-full"
+                    >
+                      <div className="mb-6">
+                        {roundWinner === 'PLAYER' ? (
+                          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-green-500/50">
+                            <Sparkles className="text-green-500" size={40} />
+                          </div>
+                        ) : (
+                          <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
+                            <Info className="text-red-500" size={40} />
+                          </div>
+                        )}
+                        <h2 className={`text-3xl font-black uppercase tracking-tighter ${roundWinner === 'PLAYER' ? 'text-green-400' : 'text-red-400'}`}>
+                          {roundWinner === 'PLAYER' ? '勝利' : '落敗'}
+                        </h2>
+                        <p className="text-white/40 text-xs font-bold mt-1">
+                          {roundWinner === 'PLAYER' ? '帝國子民的榮耀' : '再接再厲，逆天改命'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-4 mb-8">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-white/60">結算金額</span>
+                          <span className={`font-black ${roundWinner === 'PLAYER' ? 'text-green-400' : 'text-red-400'}`}>
+                            {roundWinner === 'PLAYER' ? '+' : '-'}{bet} L-Coin
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={resetGame}
+                        className="w-full py-4 bg-gold-primary text-black font-black rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all"
+                      >
+                        返回角力場
                       </button>
                     </motion.div>
                   </motion.div>
@@ -719,6 +905,12 @@ export default function ECardArena() {
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        .clip-path-shards {
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+        .writing-vertical {
+          writing-mode: vertical-rl;
         }
       `}</style>
     </div>

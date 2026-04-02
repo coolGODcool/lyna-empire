@@ -196,20 +196,23 @@ export default function ECardArena() {
 
   // 結算
   const handleGameEnd = (winner: "PLAYER" | "AI") => {
-    let payout = 0;
+    let profit = 0;
+    let stake = playerSide === "SERF_SIDE" ? bet : bet * 5;
+    let opponentBet = playerSide === "SERF_SIDE" ? bet * 5 : bet;
+
     if (winner === "PLAYER") {
+      // 贏家獲得：自己的本金 + (對手的下注 * 90%)
+      profit = Math.floor(opponentBet * 0.9);
+      const totalPayout = stake + profit;
+      
       if (playerSide === "MANAGER_SIDE") {
-        // 管理者勝：回收 90% (下注 50，回收 45)
-        payout = Math.floor(bet * 5 * 0.9);
-        setMessage(`壓制成功！回收 ${payout} L-Coin (已扣除 10% 國庫稅)`);
+        setMessage(`階級壓制成功！回收本金並贏得 ${profit} L-Coin (已扣 10% 國庫稅)`);
       } else {
-        // 賤民勝：回收 450% (下注 10，總獎金 50，回收 45)
-        payout = Math.floor(bet * 5 * 0.9);
-        setMessage(`奇蹟發生！逆天改命成功！回收 ${payout} L-Coin`);
+        setMessage(`奇蹟發生！逆天改命成功！贏得 ${profit} L-Coin (已扣 10% 國庫稅)`);
       }
-      setLCoinBalance(prev => prev + payout);
+      setLCoinBalance(prev => prev + totalPayout);
     } else {
-      setMessage(playerSide === "MANAGER_SIDE" ? "被賤民反殺，國庫蒙羞！" : "階級壓制... 革命尚未成功。");
+      setMessage(playerSide === "MANAGER_SIDE" ? "被 89 猴反殺，國庫蒙羞！" : "階級壓制... 革命尚未成功。");
     }
   };
 
@@ -408,8 +411,10 @@ export default function ECardArena() {
                   <span className="text-gold-primary">{playerSide === "SERF_SIDE" ? bet * 5 : bet} L-Coin</span>
                 </div>
                 <div className="pt-2 border-t border-gold-primary/10 flex justify-between text-sm font-black">
-                  <span className="text-gold-light">最高可贏取:</span>
-                  <span className="text-gold-primary">{Math.floor(bet * 5 * 0.9)} L-Coin</span>
+                  <span className="text-gold-light">預計純利:</span>
+                  <span className="text-gold-primary">
+                    {playerSide === "SERF_SIDE" ? Math.floor(bet * 5 * 0.9) : Math.floor(bet * 0.9)} L-Coin
+                  </span>
                 </div>
               </div>
 

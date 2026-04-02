@@ -80,7 +80,7 @@ export default function ECardArena() {
   const [lCoinBalance, setLCoinBalance] = useState(12850); 
   const [message, setMessage] = useState("");
   const [showGacha, setShowGacha] = useState(false);
-  const [battleEffect, setBattleEffect] = useState<"DRAW" | "ENGINEER_WIN" | "EPIC_WIN" | null>(null);
+  const [battleEffect, setBattleEffect] = useState<"DRAW" | "ENGINEER_WIN" | "EPIC_WIN" | "MANAGER_WIN" | "LOSE_HOLE" | null>(null);
   const [ownedSkins, setOwnedSkins] = useState<string[]>(["default_serf", "default_salaryman", "default_manager"]);
   const [equippedSkins, setEquippedSkins] = useState<Record<CardType, string>>({
     SERF: "default_serf",
@@ -188,11 +188,21 @@ export default function ECardArena() {
 
       if (winner !== "DRAW") {
         // 判斷特殊獲勝特效
-        if (pCard.type === "SERF" && aCard.type === "MANAGER") {
-          setBattleEffect("EPIC_WIN");
-          if (window.navigator.vibrate) window.navigator.vibrate([200, 50, 200, 50, 500]); // 模擬排氣管
-        } else if (pCard.type === "SALARYMAN" && aCard.type === "SERF") {
-          setBattleEffect("ENGINEER_WIN");
+        if (winner === "PLAYER") {
+          if (pCard.type === "SERF" && aCard.type === "MANAGER") {
+            setBattleEffect("EPIC_WIN");
+            if (window.navigator.vibrate) window.navigator.vibrate([500, 100, 200, 100, 200]); // 斬擊與噴錢
+          } else if (pCard.type === "SALARYMAN" && aCard.type === "SERF") {
+            setBattleEffect("ENGINEER_WIN");
+            if (window.navigator.vibrate) window.navigator.vibrate([100, 50, 100]);
+          } else if (pCard.type === "MANAGER" && aCard.type === "SALARYMAN") {
+            setBattleEffect("MANAGER_WIN");
+            if (window.navigator.vibrate) window.navigator.vibrate([200, 200, 200, 200, 200]); // 帳單重壓
+          }
+        } else {
+          // 玩家輸了，觸發黑洞特效
+          setBattleEffect("LOSE_HOLE");
+          if (window.navigator.vibrate) window.navigator.vibrate([400]);
         }
         
         setGameState("GAME_OVER");
@@ -565,46 +575,73 @@ export default function ECardArena() {
                 )}
               </AnimatePresence>
 
-              {/* 2. 工程師 壓制 89牛馬：【社會教訓】 */}
+              {/* 2. 肝苦工程師 壓制 89牛馬：【階級馬力測試】 */}
               <AnimatePresence>
                 {battleEffect === "ENGINEER_WIN" && (
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none"
+                    className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none overflow-hidden"
                   >
-                    <div className="absolute inset-0 bg-blue-900/20 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-blue-900/40 backdrop-blur-sm" />
+                    
+                    {/* BMW 雙腎燈強光 */}
                     <motion.div 
-                      initial={{ scale: 2, opacity: 0, rotate: -5 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="relative bg-white/90 p-8 border-4 border-blue-600 shadow-[0_0_50px_rgba(37,99,235,0.5)] max-w-[280px] text-black"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: [0, 1, 0.5, 1], scale: [0.5, 1.2, 1] }}
+                      className="absolute inset-0 flex justify-around items-center px-20"
                     >
-                      <div className="flex items-center gap-2 mb-4 border-b-2 border-black pb-2">
-                        <FileText size={24} />
-                        <span className="font-black text-sm uppercase">勞動契約增項條款</span>
-                      </div>
-                      <p className="text-[10px] font-serif leading-relaxed mb-4">
-                        依據帝國勞動法第 89 條，知識勞動者對體力勞動者具有絕對指導權。本合約即刻生效，乙方（89牛馬）需無條件接受社會教訓。
+                      <div className="w-32 h-20 bg-white blur-[40px] rounded-full opacity-80" />
+                      <div className="w-32 h-20 bg-white blur-[40px] rounded-full opacity-80" />
+                    </motion.div>
+
+                    {/* 輪胎輾過動態模糊 */}
+                    <motion.div 
+                      initial={{ x: -1000 }}
+                      animate={{ x: 1000 }}
+                      transition={{ duration: 0.6, ease: "circIn" }}
+                      className="absolute w-full h-40 bg-zinc-800/40 skew-x-12 blur-md"
+                    />
+
+                    {/* BWS 零件散落 */}
+                    <div className="absolute inset-0">
+                      {[...Array(15)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ x: 0, y: 0, rotate: 0 }}
+                          animate={{ 
+                            x: (Math.random() - 0.5) * 800, 
+                            y: (Math.random() - 0.5) * 800,
+                            rotate: 360,
+                            opacity: 0
+                          }}
+                          transition={{ duration: 1, delay: 0.2 }}
+                          className="absolute text-zinc-400"
+                        >
+                          <Hammer size={24} />
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    <motion.div 
+                      initial={{ y: 50, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="relative z-10 text-center"
+                    >
+                      <h2 className="text-4xl font-black text-blue-400 italic drop-shadow-[0_0_15px_rgba(59,130,246,0.8)] mb-2">
+                        階級馬力測試
+                      </h2>
+                      <p className="bg-black/80 px-4 py-2 border-l-4 border-blue-500 text-blue-100 font-bold tracking-tighter">
+                        「馬力與學歷，總要有一個在路上。」
                       </p>
-                      <div className="flex justify-between items-end">
-                        <div className="w-20 h-8 border border-black/20 flex items-center justify-center text-[8px] italic">甲方簽章</div>
-                        <Printer size={32} className="text-blue-600 animate-pulse" />
-                      </div>
-                      <motion.div 
-                        initial={{ x: -100, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="absolute -bottom-12 left-0 right-0 text-center"
-                      >
-                        <span className="text-blue-400 font-black text-lg drop-shadow-lg">「知識就是力量，給我回去跑單。」</span>
-                      </motion.div>
                     </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {/* 3. 終極逆襲特效：【底層怒火】 */}
+              {/* 3. 89牛馬 逆襲 天龍人：【階級斬殺】 */}
               <AnimatePresence>
                 {battleEffect === "EPIC_WIN" && (
                   <motion.div 
@@ -613,100 +650,206 @@ export default function ECardArena() {
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[200] flex items-center justify-center overflow-hidden"
                   >
-                    {/* Phase 1: 黑白漫畫風定格 */}
+                    {/* Phase 1: 時間凝結 (The Void) */}
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.1 }}
-                      className="absolute inset-0 bg-white mix-blend-difference grayscale contrast-[200%]"
+                      className="absolute inset-0 bg-red-950/90 flex items-center justify-center"
+                    >
+                      <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(220,38,38,0.4)_0%,transparent_70%)] animate-pulse" />
+                      
+                      {/* 裂痕預警 */}
+                      <motion.div 
+                        initial={{ scale: 1 }}
+                        animate={{ scale: 1.1, opacity: [0.2, 0.5, 0.2] }}
+                        transition={{ duration: 0.5, repeat: Infinity }}
+                        className="absolute text-yellow-500/20"
+                      >
+                        <GlassWater size={300} />
+                      </motion.div>
+                    </motion.div>
+
+                    {/* Phase 2: 89 斬擊 (The 89 Slash) */}
+                    <motion.div 
+                      initial={{ x: -1000, skewX: -45 }}
+                      animate={{ x: 1000 }}
+                      transition={{ delay: 1, duration: 0.3, ease: "circIn" }}
+                      className="absolute w-full h-2 bg-red-500 shadow-[0_0_30px_#ef4444] z-10"
                     />
                     
-                    {/* Phase 2: 破碎效果 (模擬) */}
+                    {/* 噴發的 L-Coin (代替血) */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      {[...Array(12)].map((_, i) => (
+                      {[...Array(40)].map((_, i) => (
                         <motion.div
-                          key={i}
-                          initial={{ scale: 0, x: 0, y: 0, rotate: 0 }}
-                          animate={{ 
-                            scale: [0, 1.5, 0], 
-                            x: (Math.random() - 0.5) * 1000, 
-                            y: (Math.random() - 0.5) * 1000,
-                            rotate: 720 
-                          }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          className="absolute w-16 h-16 bg-gradient-to-br from-yellow-200 to-transparent clip-path-shards opacity-60"
-                        />
-                      ))}
-                    </div>
-
-                    {/* Phase 3: 火花噴濺 */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      {[...Array(30)].map((_, i) => (
-                        <motion.div
-                          key={`spark-${i}`}
-                          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                          key={`slash-coin-${i}`}
+                          initial={{ x: 0, y: 0, opacity: 0 }}
                           animate={{ 
                             x: (Math.random() - 0.5) * 600, 
                             y: (Math.random() - 0.5) * 600,
-                            opacity: 0,
-                            scale: 0
+                            opacity: [0, 1, 0],
+                            scale: [0, 1.5, 0]
                           }}
-                          transition={{ duration: 0.8, ease: "circOut", delay: 0.5 }}
-                          className="absolute w-1 h-1 bg-orange-400 shadow-[0_0_10px_#fb923c]"
-                        />
+                          transition={{ duration: 0.5, delay: 1.2 }}
+                          className="absolute text-yellow-400"
+                        >
+                          <Coins size={24} fill="currentColor" />
+                        </motion.div>
                       ))}
                     </div>
 
-                    {/* Phase 4: 報金幣 (噴射感) */}
+                    {/* Phase 3: 金幣噴泉 (L-Coin Eruption) */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      {[...Array(60)].map((_, i) => (
+                      {[...Array(80)].map((_, i) => (
                         <motion.div
-                          key={`coin-${i}`}
+                          key={`fountain-coin-${i}`}
                           initial={{ scale: 0, x: 0, y: 0 }}
                           animate={{ 
                             scale: [0, 1.2, 0.8], 
                             x: (Math.random() - 0.5) * 1200, 
-                            y: [0, -400, 800],
+                            y: [0, -600, 1000],
                             rotate: 1080
                           }}
                           transition={{ 
-                            duration: 1.5, 
-                            delay: 0.8 + Math.random() * 0.5,
+                            duration: 2, 
+                            delay: 1.5 + Math.random() * 0.5,
                             ease: "backOut"
                           }}
                           className="absolute text-yellow-400 blur-[0.5px]"
                         >
-                          <Coins size={40} fill="currentColor" className="drop-shadow-[0_0_10px_rgba(234,179,8,0.8)]" />
+                          <Coins size={40} fill="currentColor" className="drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]" />
                         </motion.div>
                       ))}
                     </div>
                     
-                    {/* 特寫文字：草根書法 */}
+                    {/* 特寫文字：毛筆字特效 */}
                     <motion.div
                       initial={{ scale: 5, opacity: 0, rotate: -20 }}
                       animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                      transition={{ type: "spring", damping: 12, delay: 0.6 }}
+                      transition={{ type: "spring", damping: 12, delay: 1.8 }}
                       className="relative z-50 text-center"
                     >
-                      <h2 className="text-8xl font-black text-white italic drop-shadow-[0_0_30px_rgba(255,0,0,1)] tracking-tighter filter brightness-125">
+                      <h2 className="text-8xl font-black text-white italic drop-shadow-[0_0_40px_rgba(255,0,0,1)] tracking-tighter mb-4">
                         逆 天 改 命
                       </h2>
-                      <motion.div 
-                        animate={{ x: [-2, 2, -2] }}
-                        transition={{ repeat: Infinity, duration: 0.1 }}
-                        className="mt-6 bg-gradient-to-r from-transparent via-red-600 to-transparent py-2"
-                      >
-                        <p className="text-yellow-400 text-3xl font-black uppercase tracking-[0.3em]">
-                          Epic Rebellion Win!
+                      <div className="space-y-4">
+                        <p className="text-yellow-400 text-3xl font-black uppercase tracking-[0.2em] bg-black/60 px-6 py-2 rounded-full inline-block border-2 border-yellow-500">
+                          贏要衝，輸要縮。今天換我收租！
                         </p>
-                      </motion.div>
+                        <motion.p 
+                          animate={{ opacity: [0, 1, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.5 }}
+                          className="text-green-400 text-xl font-black"
+                        >
+                          收錢速度加快中 ^^
+                        </motion.p>
+                      </div>
                       <button 
                         onClick={resetGame}
-                        className="mt-16 px-16 py-5 bg-white text-red-600 font-black text-xl rounded-full shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-110 transition-transform active:scale-95"
+                        className="mt-12 px-16 py-5 bg-white text-red-600 font-black text-2xl rounded-full shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:scale-110 transition-transform"
                       >
                         收下賞金
                       </button>
                     </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 4. 天龍人 壓制 肝苦工程師：【資產五指山】 */}
+              <AnimatePresence>
+                {battleEffect === "MANAGER_WIN" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-yellow-900/20 backdrop-blur-md" />
+                    
+                    {/* 落下帳單 */}
+                    <div className="absolute inset-0">
+                      {[...Array(30)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ y: -500, x: (Math.random() - 0.5) * 400, rotate: Math.random() * 360 }}
+                          animate={{ y: 200 + i * 5, rotate: Math.random() * 20 }}
+                          transition={{ delay: i * 0.05, type: "spring", stiffness: 100 }}
+                          className="absolute w-32 h-40 bg-white border border-zinc-300 shadow-lg flex flex-col p-2 text-black"
+                        >
+                          <div className="text-[8px] font-black border-b border-black mb-1">
+                            {i % 3 === 0 ? "房貸合約" : i % 3 === 1 ? "車貸帳單" : "稅務催繳單"}
+                          </div>
+                          <div className="flex-1 bg-zinc-100 flex items-center justify-center">
+                            <span className="text-xs font-serif opacity-20">OFFICIAL</span>
+                          </div>
+                          <div className="text-[10px] font-black text-right mt-1 text-red-600">$99,999,999</div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* 紅酒杯蓋章 */}
+                    <motion.div
+                      initial={{ scale: 5, opacity: 0, y: -200 }}
+                      animate={{ scale: 1.5, opacity: 0.4, y: 0 }}
+                      transition={{ delay: 1.8, duration: 0.5, type: "spring" }}
+                      className="absolute text-yellow-500"
+                    >
+                      <GlassWater size={200} />
+                    </motion.div>
+
+                    <motion.div 
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 2.2 }}
+                      className="relative z-10 bg-black border-2 border-yellow-500 p-6 text-center shadow-[0_0_50px_rgba(234,179,8,0.5)]"
+                    >
+                      <h2 className="text-2xl font-black text-yellow-500 tracking-widest uppercase mb-2">
+                        資產五指山
+                      </h2>
+                      <p className="text-white font-serif italic text-lg">
+                        「你的努力，只是我的利息。」
+                      </p>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 5. 失敗懲罰：【底層重練】 */}
+              <AnimatePresence>
+                {battleEffect === "LOSE_HOLE" && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none"
+                  >
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+                    
+                    {/* 黑洞漩渦 */}
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      className="absolute w-80 h-80 rounded-full border-t-4 border-r-4 border-white/10 shadow-[0_0_100px_rgba(255,255,255,0.1)]"
+                    />
+
+                    <div className="relative z-10 text-center">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          rotate: [0, 5, -5, 0]
+                        }}
+                        transition={{ repeat: Infinity, duration: 1 }}
+                        className="mb-6"
+                      >
+                        <Skull size={80} className="text-white/20 mx-auto" />
+                      </motion.div>
+                      <h2 className="text-3xl font-black text-white tracking-tighter mb-2">
+                        帳號重練中...
+                      </h2>
+                      <div className="flex items-center justify-center gap-2 text-white/40 font-mono text-sm">
+                        <Loader2 className="animate-spin" size={16} />
+                        <span>正在回收剩餘價值...</span>
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

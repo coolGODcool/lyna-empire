@@ -11,8 +11,10 @@ import {
   Heart,
   Activity,
   Trophy,
-  Gamepad2
+  Gamepad2,
+  X
 } from "lucide-react";
+import ECardArena from "./ECardArena";
 
 interface LoungeProps {
   userId?: string;
@@ -23,6 +25,7 @@ export default function Lounge({ userId = "User_001" }: LoungeProps) {
   // 權限判斷：CEO (LN-001) 或 領主 (Lord_xxx)
   const isCEOOrLord = userId === "LN-001" || userId.startsWith("Lord");
   
+  const [showGame, setShowGame] = useState(false);
   const [warRoomData] = useState({
     todayVolume: 284500,
     activeCitizens: 1240,
@@ -30,10 +33,24 @@ export default function Lounge({ userId = "User_001" }: LoungeProps) {
   });
 
   const [games] = useState([
-    { id: 1, name: "E-Card: 心理博弈", players: 12, pool: "5,000 L-Coin", icon: <Spade className="text-gold-primary" /> },
+    { id: 1, name: "E-Card: 階級叛亂", players: 12, pool: "5,000 L-Coin", icon: <Spade className="text-gold-primary" /> },
     { id: 2, name: "帝國德州撲克", players: 8, pool: "12,500 L-Coin", icon: <Heart className="text-red-500" /> },
     { id: 3, name: "21點：國庫對決", players: 5, pool: "3,200 L-Coin", icon: <Club className="text-gold-light" /> },
   ]);
+
+  if (showGame) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-black">
+        <button 
+          onClick={() => setShowGame(false)}
+          className="absolute top-4 right-4 z-[310] p-2 bg-black/60 border border-white/20 rounded-full text-white hover:bg-white/10 transition-colors"
+        >
+          <X size={24} />
+        </button>
+        <ECardArena />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-8 font-serif">
@@ -123,7 +140,10 @@ export default function Lounge({ userId = "User_001" }: LoungeProps) {
                   </span>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-gold-primary/10 border border-gold-primary/40 text-gold-primary text-[10px] font-black uppercase tracking-widest rounded-lg group-hover:bg-gold-primary group-hover:text-black transition-all">
+              <button 
+                onClick={() => game.id === 1 && setShowGame(true)}
+                className="px-4 py-2 bg-gold-primary/10 border border-gold-primary/40 text-gold-primary text-[10px] font-black uppercase tracking-widest rounded-lg group-hover:bg-gold-primary group-hover:text-black transition-all"
+              >
                 進入
               </button>
             </motion.div>

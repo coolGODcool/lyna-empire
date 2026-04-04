@@ -10,7 +10,7 @@ interface BountyPanelProps {
 }
 
 export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelProps) {
-  const [amount, setAmount] = useState(100);
+  const [amount, setAmount] = useState(30);
   const [estimatedAcceptance, setEstimatedAcceptance] = useState(0.15);
   const [potentialHunters, setPotentialHunters] = useState(0);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -29,7 +29,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
   }, [amount]);
 
   const handleAdjust = (delta: number) => {
-    setAmount(prev => Math.max(0, prev + delta));
+    setAmount(prev => Math.max(30, prev + delta));
   };
 
   const handleConfirm = async () => {
@@ -65,7 +65,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCancel}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300]"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] pointer-events-auto"
           />
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
@@ -108,6 +108,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                         <div className="relative">
                           <input 
                             type="number"
+                            inputMode="numeric"
                             value={amount}
                             onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
                             className="w-40 bg-transparent text-5xl font-black font-mono text-white text-center focus:outline-none tracking-tighter"

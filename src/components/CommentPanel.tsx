@@ -9,6 +9,7 @@ interface Comment {
   rating: number;
   text: string;
   time: string;
+  timestamp: number;
   weight: number;
 }
 
@@ -22,16 +23,21 @@ export default function CommentPanel({ isOpen, onClose, storeName }: CommentPane
   const [sortBy, setSortBy] = useState<'weight' | 'time' | 'rating'>('weight');
 
   const initialComments: Comment[] = [
-    { id: "1", user: "帝國賢者 5566", score: 98, rating: 10, text: "這家店的咖啡豆是從帝國邊境空運過來的，口感極其醇厚，強烈推薦！", time: "10分鐘前", weight: 5 },
-    { id: "2", user: "領主 001", score: 85, rating: 9, text: "服務非常到位，環境也很適合商議大計。", time: "30分鐘前", weight: 3 },
-    { id: "3", user: "子民 778", score: 72, rating: 8, text: "排隊時間有點長，但味道確實不錯。", time: "1小時前", weight: 1 },
-    { id: "4", user: "帝國守衛 101", score: 96, rating: 10, text: "每次巡邏完都要來這裡喝一杯，這就是帝國的味道。", time: "5分鐘前", weight: 5 },
+    { id: "1", user: "帝國賢者 5566", score: 98, rating: 10, text: "這家店的咖啡豆是從帝國邊境空運過來的，口感極其醇厚，強烈推薦！", time: "10分鐘前", timestamp: Date.now() - 600000, weight: 5 },
+    { id: "2", user: "領主 001", score: 85, rating: 9, text: "服務非常到位，環境也很適合商議大計。", time: "30分鐘前", timestamp: Date.now() - 1800000, weight: 3 },
+    { id: "3", user: "子民 778", score: 72, rating: 8, text: "排隊時間有點長，但味道確實不錯。", time: "1小時前", timestamp: Date.now() - 3600000, weight: 1 },
+    { id: "4", user: "帝國守衛 101", score: 96, rating: 10, text: "每次巡邏完都要來這裡喝一杯，這就是帝國的味道。", time: "5分鐘前", timestamp: Date.now() - 300000, weight: 5 },
   ];
 
   const sortedComments = useMemo(() => {
     return [...initialComments].sort((a, b) => {
-      if (sortBy === 'weight') return b.weight - a.weight;
-      if (sortBy === 'time') return 0; // Simplified for mock
+      if (sortBy === 'weight') {
+        // [Weight(Credit Score) > Rating > Time]
+        if (b.weight !== a.weight) return b.weight - a.weight;
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        return b.timestamp - a.timestamp;
+      }
+      if (sortBy === 'time') return b.timestamp - a.timestamp;
       if (sortBy === 'rating') return b.rating - a.rating;
       return 0;
     });

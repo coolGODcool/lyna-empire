@@ -48,7 +48,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
   };
 
   return (
-    <div className="absolute top-0 left-0 z-[110] flex items-center h-8 px-6">
+    <div className="absolute top-0 left-0 z-[110] flex items-center h-8 px-6 pointer-events-auto">
       {/* Search Icon - Integrated into Bar */}
       <button
         onClick={toggleExpand}

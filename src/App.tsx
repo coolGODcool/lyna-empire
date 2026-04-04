@@ -35,6 +35,7 @@ import LevelUpAnimation from "./components/LevelUpAnimation";
 import VideoPlayer from "./components/VideoPlayer";
 import SupportPanel from "./components/SupportPanel";
 import CommentPanel from "./components/CommentPanel";
+import SearchSystem from "./components/SearchSystem";
 import { Calendar, MapPin, Navigation } from "lucide-react";
 
 // RPG 公告欄美學重建 - Navbar 精緻化
@@ -195,6 +196,7 @@ export default function App() {
   const [activeVideoId, setActiveVideoId] = useState<string | null>("1");
   const [showFountain, setShowFountain] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(true);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   // 任務二：頂部「公益金季度百分比」算法 (Quarterly Progress Logic)
   const getQuarterlyProgress = () => {
@@ -322,6 +324,18 @@ export default function App() {
     >
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-4 flex flex-col gap-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm">
+        {/* Search System - Top Left */}
+        <SearchSystem 
+          onExpandChange={setIsSearchExpanded}
+          onStoreSelect={(id) => {
+            const store = stores.find(s => s.id === id);
+            if (store) {
+              setSelectedStore(store);
+              setShowOrderPanel(true);
+            }
+          }}
+        />
+
         {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
         <div className="mx-[-1.5rem] relative h-10 matte-gold-track border-b border-gold-primary/30 shadow-[0_0_25px_rgba(212,175,55,0.4)] overflow-hidden z-[60]">
           {/* Liquid Gold Progress Fill - Based on Date Percentage */}
@@ -332,7 +346,7 @@ export default function App() {
           />
           
           {/* Text Overlay - Large & Prestigious */}
-          <div className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none">
+          <div className={`absolute inset-0 flex items-center justify-center px-6 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
               <Sparkles size={18} className="text-gold-light animate-pulse" />
               <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">

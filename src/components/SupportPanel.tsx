@@ -15,6 +15,8 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
   const [showCoins, setShowCoins] = useState(false);
   const [offsetY, setOffsetY] = useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const holdTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const holdInterval = React.useRef<NodeJS.Timeout | null>(null);
 
   const quickAmounts = [5, 10, 50];
 
@@ -49,6 +51,23 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
   const handleAdjust = (delta: number) => {
     setAmount(prev => Math.max(5, prev + delta));
     triggerCoinDrop();
+  };
+
+  const startHold = (delta: number) => {
+    handleAdjust(delta);
+    if (navigator.vibrate) navigator.vibrate(10);
+    
+    holdTimer.current = setTimeout(() => {
+      holdInterval.current = setInterval(() => {
+        handleAdjust(delta);
+        if (navigator.vibrate) navigator.vibrate(10);
+      }, 100);
+    }, 500);
+  };
+
+  const stopHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    if (holdInterval.current) clearInterval(holdInterval.current);
   };
 
   const setFixedAmount = (val: number) => {
@@ -153,7 +172,11 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                   <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">贊助金額</span>
                   <div className="flex items-center gap-8">
                     <button
-                      onClick={() => handleAdjust(-1)}
+                      onMouseDown={() => startHold(-1)}
+                      onMouseUp={stopHold}
+                      onMouseLeave={stopHold}
+                      onTouchStart={(e) => { e.preventDefault(); startHold(-1); }}
+                      onTouchEnd={stopHold}
                       disabled={amount <= 5}
                       className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all disabled:opacity-20"
                     >
@@ -177,7 +200,11 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                       <span className="text-[10px] text-gold-primary/60 font-bold tracking-[0.2em]">L-COIN</span>
                     </div>
                     <button
-                      onClick={() => handleAdjust(1)}
+                      onMouseDown={() => startHold(1)}
+                      onMouseUp={stopHold}
+                      onMouseLeave={stopHold}
+                      onTouchStart={(e) => { e.preventDefault(); startHold(1); }}
+                      onTouchEnd={stopHold}
                       className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all"
                     >
                       <Plus className="w-6 h-6" />

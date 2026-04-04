@@ -190,10 +190,27 @@ export default function App() {
   const [trustScore, setTrustScore] = useState(79); // Start near threshold
   const [balance, setBalance] = useState(24500);
   const [charityPool, setCharityPool] = useState(8200000); // 8.2M
+  const [lastDonatedAmount, setLastDonatedAmount] = useState(10);
   const [showPlusPanel, setShowPlusPanel] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>("1");
   const [showFountain, setShowFountain] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(true);
+
+  // 任務二：頂部「公益金季度百分比」算法 (Quarterly Progress Logic)
+  const getQuarterlyProgress = () => {
+    const now = new Date();
+    const month = now.getMonth();
+    const quarterStartMonth = Math.floor(month / 3) * 3;
+    const quarterStart = new Date(now.getFullYear(), quarterStartMonth, 1);
+    const nextQuarterStart = new Date(now.getFullYear(), quarterStartMonth + 3, 1);
+    
+    const totalDays = (nextQuarterStart.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24);
+    const daysPassed = (now.getTime() - quarterStart.getTime()) / (1000 * 60 * 60 * 24);
+    
+    return Math.min(100, Math.max(0, Math.floor((daysPassed / totalDays) * 100)));
+  };
+
+  const quarterlyProgress = getQuarterlyProgress();
   
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
@@ -305,26 +322,23 @@ export default function App() {
     >
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-4 flex flex-col gap-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm">
-        {/* Grand Beneficence Bar - Full Width */}
-        <div className="mx-[-1.5rem] relative h-8 matte-gold-track border-b border-gold-primary/30 shadow-[0_0_25px_rgba(212,175,55,0.4)] overflow-hidden z-[60]">
-          {/* Liquid Gold Progress Fill */}
+        {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
+        <div className="mx-[-1.5rem] relative h-10 matte-gold-track border-b border-gold-primary/30 shadow-[0_0_25px_rgba(212,175,55,0.4)] overflow-hidden z-[60]">
+          {/* Liquid Gold Progress Fill - Based on Date Percentage */}
           <motion.div 
             initial={{ width: 0 }}
-            animate={{ width: `${(charityPool / 10000000) * 100}%` }}
+            animate={{ width: `${quarterlyProgress}%` }}
             className="absolute top-0 left-0 h-full liquid-gold shadow-[0_0_20px_rgba(212,175,55,0.7)]"
           />
           
           {/* Text Overlay - Large & Prestigious */}
-          <div className="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-gold-light animate-pulse" />
-              <span className="text-[11px] font-black text-white uppercase tracking-[0.25em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                本季公益金累積 (1%)
+          <div className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none">
+            <div className="flex items-center gap-3">
+              <Sparkles size={18} className="text-gold-light animate-pulse" />
+              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                本季結算倒數 {quarterlyProgress}% | 目前帝國累計公益金 ${(charityPool / 1000000).toFixed(2)}M
               </span>
             </div>
-            <span className="text-sm font-black font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-              ${(charityPool / 1000000).toFixed(2)}M
-            </span>
           </div>
           
           {/* Outer Glow Effect on Top Edge */}
@@ -589,9 +603,11 @@ export default function App() {
       <SupportPanel 
         isOpen={showSupport}
         onClose={() => setShowSupport(false)}
+        initialAmount={lastDonatedAmount}
         onConfirm={(amount) => {
           setBalance(prev => prev - amount);
           setCharityPool(prev => prev + amount * 0.01);
+          setLastDonatedAmount(amount);
           // Trigger visual feedback
         }}
       />

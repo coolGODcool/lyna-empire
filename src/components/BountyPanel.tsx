@@ -15,6 +15,8 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
   const [potentialHunters, setPotentialHunters] = useState(0);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const holdTimer = useRef<NodeJS.Timeout | null>(null);
+  const holdInterval = useRef<NodeJS.Timeout | null>(null);
   
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -30,6 +32,23 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
 
   const handleAdjust = (delta: number) => {
     setAmount(prev => Math.max(30, prev + delta));
+  };
+
+  const startHold = (delta: number) => {
+    handleAdjust(delta);
+    if (navigator.vibrate) navigator.vibrate(10);
+    
+    holdTimer.current = setTimeout(() => {
+      holdInterval.current = setInterval(() => {
+        handleAdjust(delta);
+        if (navigator.vibrate) navigator.vibrate(10);
+      }, 100);
+    }, 500);
+  };
+
+  const stopHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    if (holdInterval.current) clearInterval(holdInterval.current);
   };
 
   const handleConfirm = async () => {
@@ -118,33 +137,53 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
 
                         <div className="flex flex-wrap justify-center gap-2">
                           <button 
-                            onClick={() => handleAdjust(-10)}
+                            onMouseDown={() => startHold(-10)}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={(e) => { e.preventDefault(); startHold(-10); }}
+                            onTouchEnd={stopHold}
                             disabled={amount <= 30}
                             className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold disabled:opacity-30"
                           >
                             -10
                           </button>
                           <button 
-                            onClick={() => handleAdjust(-5)}
+                            onMouseDown={() => startHold(-5)}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={(e) => { e.preventDefault(); startHold(-5); }}
+                            onTouchEnd={stopHold}
                             disabled={amount <= 30}
                             className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold disabled:opacity-30"
                           >
                             -5
                           </button>
                           <button 
-                            onClick={() => handleAdjust(5)}
+                            onMouseDown={() => startHold(5)}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={(e) => { e.preventDefault(); startHold(5); }}
+                            onTouchEnd={stopHold}
                             className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
                           >
                             +5
                           </button>
                           <button 
-                            onClick={() => handleAdjust(10)}
+                            onMouseDown={() => startHold(10)}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={(e) => { e.preventDefault(); startHold(10); }}
+                            onTouchEnd={stopHold}
                             className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
                           >
                             +10
                           </button>
                           <button 
-                            onClick={() => handleAdjust(100)}
+                            onMouseDown={() => startHold(100)}
+                            onMouseUp={stopHold}
+                            onMouseLeave={stopHold}
+                            onTouchStart={(e) => { e.preventDefault(); startHold(100); }}
+                            onTouchEnd={stopHold}
                             className="px-3 py-2 rounded-xl bg-gold-primary/20 text-gold-primary border border-gold-primary/40 hover:bg-gold-primary/30 active:scale-90 transition-all text-xs font-bold"
                           >
                             +100

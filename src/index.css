@@ -77,12 +77,23 @@
 .snap-container {
   scroll-snap-type: y mandatory;
   overflow-y: scroll;
-  height: 100%;
+  overflow-x: hidden;
+  height: 100dvh;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  background-color: black;
 }
 
 .snap-container::-webkit-scrollbar {
   display: none;
+}
+
+.snap-item {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  height: 100dvh;
+  width: 100%;
+  position: relative;
 }
 
 @keyframes breathingGold {

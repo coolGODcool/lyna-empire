@@ -71,9 +71,10 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center p-6 z-[301] pointer-events-none"
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed inset-0 flex items-center justify-center p-6 z-[301] pointer-events-auto"
           >
-            <div className="w-full max-w-sm glass-card p-8 border-gold-primary/40 space-y-8 pointer-events-auto shadow-[0_0_50px_rgba(212,175,55,0.2)]">
+            <div className="w-full max-w-sm glass-card p-8 border-gold-primary/40 space-y-8 shadow-[0_0_50px_rgba(212,175,55,0.3)]">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-black gold-gradient-text italic tracking-tighter">
@@ -117,13 +118,15 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                         <div className="flex flex-wrap justify-center gap-2">
                           <button 
                             onClick={() => handleAdjust(-10)}
-                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
+                            disabled={amount <= 30}
+                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold disabled:opacity-30"
                           >
                             -10
                           </button>
                           <button 
                             onClick={() => handleAdjust(-5)}
-                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
+                            disabled={amount <= 30}
+                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold disabled:opacity-30"
                           >
                             -5
                           </button>
@@ -188,7 +191,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                 <button 
                   onClick={handleConfirm}
                   disabled={isLoading || (!isConfirming && amount < 30)}
-                  className={`w-full py-5 ${isConfirming ? 'bg-gold-primary shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'bg-white/10 border border-gold-primary/40'} text-black font-black text-lg uppercase tracking-[0.3em] rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale`}
+                  className={`w-full py-5 ${isConfirming || amount > 30 ? 'bg-gold-primary shadow-[0_0_30px_rgba(212,175,55,0.6)] animate-pulse' : 'bg-white/10 border border-gold-primary/40'} text-black font-black text-lg uppercase tracking-[0.3em] rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale`}
                 >
                   {isLoading ? (
                     <>
@@ -197,7 +200,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                     </>
                   ) : (
                     <>
-                      <Zap size={20} className={isConfirming ? "fill-black" : "text-gold-primary"} />
+                      <Zap size={20} className={isConfirming || amount > 30 ? "fill-black" : "text-gold-primary"} />
                       {isConfirming ? "確認支付" : "發布懸賞"}
                     </>
                   )}
@@ -213,6 +216,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
               </div>
             </div>
           </motion.div>
+
         </>
       )}
     </AnimatePresence>

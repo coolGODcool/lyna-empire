@@ -264,7 +264,7 @@ export default function App() {
         if (clickCount.current === 1) {
           // 隱性解鎖聲音
           if (isGlobalMuted) setIsGlobalMuted(false);
-          setShowOrderPanel(true);
+          // 移除全螢幕點擊預約，改為僅解鎖聲音
         } else if (clickCount.current === 2) {
           if (isLiked) {
             setLikes(prev => prev - 1);
@@ -458,8 +458,11 @@ export default function App() {
                     <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20">
                       {/* Dynamic Clock/Calendar Logic */}
                       <div 
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex flex-col items-center gap-1 mb-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowOrderPanel(true);
+                        }}
+                        className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform"
                       >
                         <div className="w-12 h-12 rounded-full bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 flex items-center justify-center text-gold-primary animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]">
                           {store.serviceMode === 'reserve' ? <Calendar size={20} /> : <Clock size={20} />}
@@ -484,7 +487,7 @@ export default function App() {
                           }
                         }}
                       />
-                      <InteractionButton icon={<Gift size={22} />} label="贊助" onClick={() => setShowSupport(true)} />
+                      <InteractionButton icon={<Coins size={22} />} label="贊助" onClick={() => setShowSupport(true)} />
                       <InteractionButton icon={<MessageSquare size={22} />} label="留言" onClick={() => setShowComments(true)} />
                       <InteractionButton icon={<Share2 size={22} />} label="分享" onClick={() => {
                         const referralCode = `LYNA-${userId}-${store.id}`;

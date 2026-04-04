@@ -1,3 +1,4 @@
+// 萊娜帝國主應用程式，負責導航、影音流布局與核心交互邏輯。
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -236,7 +237,11 @@ export default function App() {
 
     clickTimer.current = setTimeout(() => {
       if (clickCount.current === 1) {
-        setShowOrderPanel(true);
+        // 點擊區域過濾：僅限水平中間 60% (20%vw - 80%vw)
+        const screenWidth = window.innerWidth;
+        if (x >= screenWidth * 0.2 && x <= screenWidth * 0.8) {
+          setShowOrderPanel(true);
+        }
       } else if (clickCount.current === 2) {
         if (isLiked) {
           setLikes(prev => prev - 1);
@@ -384,14 +389,17 @@ export default function App() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
                     
                     {/* Info Tags - Bottom Left */}
-                    <div className="absolute bottom-32 left-6 right-24 space-y-3 pointer-events-none">
+                    <div 
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-32 left-6 right-24 space-y-3 pointer-events-auto z-30"
+                    >
                       <div className="flex flex-wrap gap-2 items-center">
                         <div 
                           onClick={(e) => {
                             e.stopPropagation();
                             window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + ' 鳳山')}`);
                           }}
-                          className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full pointer-events-auto cursor-pointer hover:bg-gold-primary/40 transition-all"
+                          className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full cursor-pointer hover:bg-gold-primary/40 transition-all"
                         >
                           <MapPin size={10} className="text-gold-primary" />
                           <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">📍 距離 1.2 KM (點擊導航)</span>

@@ -12,9 +12,12 @@ import {
   Activity,
   Trophy,
   Gamepad2,
+  Gavel,
+  Crown,
   X
 } from "lucide-react";
 import ECardArena from "./ECardArena";
+import AuctionHouse from "./AuctionHouse";
 
 interface LoungeProps {
   userId?: string;
@@ -26,6 +29,7 @@ export default function Lounge({ userId = "User_001" }: LoungeProps) {
   const isCEOOrLord = userId === "LN-001" || userId.startsWith("Lord");
   
   const [showGame, setShowGame] = useState(false);
+  const [showAuction, setShowAuction] = useState(false);
   const [warRoomData] = useState({
     todayVolume: 284500,
     activeCitizens: 1240,
@@ -48,6 +52,20 @@ export default function Lounge({ userId = "User_001" }: LoungeProps) {
           <X size={24} />
         </button>
         <ECardArena />
+      </div>
+    );
+  }
+
+  if (showAuction) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-black">
+        <button 
+          onClick={() => setShowAuction(false)}
+          className="absolute top-4 right-4 z-[310] p-2 bg-black/60 border border-gold-primary/20 rounded-full text-white hover:bg-white/10 transition-colors"
+        >
+          <X size={24} />
+        </button>
+        <AuctionHouse userId={userId} />
       </div>
     );
   }
@@ -120,6 +138,46 @@ export default function Lounge({ userId = "User_001" }: LoungeProps) {
         </div>
 
         <div className="grid grid-cols-1 gap-4">
+          {/* 拍賣行入口 */}
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            onClick={() => setShowAuction(true)}
+            className="glass-card p-6 border-gold-primary/40 bg-gradient-to-br from-gold-primary/20 to-transparent relative overflow-hidden cursor-pointer group"
+          >
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Gavel size={80} className="text-gold-primary" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 text-gold-primary mb-2">
+                <Crown size={16} />
+                <span className="text-[10px] uppercase tracking-[0.3em] font-mono font-black">Altate Global Auction</span>
+              </div>
+              <h3 className="text-2xl font-black gold-gradient-text italic tracking-tighter">帝國拍賣行</h3>
+              <p className="text-xs text-gold-light/60 mt-1">「權力與財富的終極收割場。」</p>
+              <div className="flex items-center gap-4 mt-4">
+                <div className="flex items-center gap-1 text-[10px] text-white font-bold">
+                  <Activity size={10} className="text-green-500" /> 正在競標中
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-gold-primary font-bold">
+                  <TrendingUp size={10} /> 最高價: $12,500
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-gold-primary/60">
+                <Gamepad2 size={14} />
+                <span className="text-[10px] uppercase tracking-[0.3em] font-mono">Empire Social Lounge</span>
+              </div>
+              <h2 className="text-2xl font-black text-white italic tracking-tighter">E-Card 競技場</h2>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-gold-primary/20 border border-gold-primary/40 flex items-center justify-center">
+              <Spade className="text-gold-primary" size={20} />
+            </div>
+          </div>
+
           {games.map((game) => (
             <motion.div 
               key={game.id}

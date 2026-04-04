@@ -262,6 +262,8 @@ export default function App() {
 
       if (isInCenter) {
         if (clickCount.current === 1) {
+          // 隱性解鎖聲音
+          if (isGlobalMuted) setIsGlobalMuted(false);
           setShowOrderPanel(true);
         } else if (clickCount.current === 2) {
           if (isLiked) {
@@ -279,7 +281,7 @@ export default function App() {
         }
       }
       clickCount.current = 0;
-    }, 300);
+    }, 250); // 縮短延遲以提升反應速度
   };
 
   const handleOrderConfirm = (data: OrderData) => {
@@ -561,6 +563,7 @@ export default function App() {
         onClose={() => setShowOrderPanel(false)}
         storeName={selectedStore?.name || ""}
         onConfirm={handleOrderConfirm}
+        pricePerUnit={150}
       />
 
       {/* Support Panel */}

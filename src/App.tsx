@@ -303,22 +303,30 @@ export default function App() {
     >
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-4 flex flex-col gap-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm">
-        {/* Charity Pool - Top Center */}
-        <div className="w-full max-w-[240px] mx-auto px-4 py-1.5 bg-black/40 rounded-b-2xl border-x border-b border-gold-primary/20 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-          <div className="flex justify-between items-center mb-1">
-            <div className="flex items-center gap-1">
-              <Sparkles size={8} className="text-gold-primary animate-pulse" />
-              <span className="text-[7px] font-black gold-gradient-text uppercase tracking-widest">本季公益金累積 (1%)</span>
+        {/* Grand Beneficence Bar - Full Width */}
+        <div className="mx-[-1.5rem] relative h-8 matte-gold-track border-b border-gold-primary/30 shadow-[0_0_25px_rgba(212,175,55,0.4)] overflow-hidden z-[60]">
+          {/* Liquid Gold Progress Fill */}
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${(charityPool / 10000000) * 100}%` }}
+            className="absolute top-0 left-0 h-full liquid-gold shadow-[0_0_20px_rgba(212,175,55,0.7)]"
+          />
+          
+          {/* Text Overlay - Large & Prestigious */}
+          <div className="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-gold-light animate-pulse" />
+              <span className="text-[11px] font-black text-white uppercase tracking-[0.25em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                本季公益金累積 (1%)
+              </span>
             </div>
-            <span className="text-[7px] font-black font-mono text-white/80">${(charityPool / 1000000).toFixed(2)}M</span>
+            <span className="text-sm font-black font-mono text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              ${(charityPool / 1000000).toFixed(2)}M
+            </span>
           </div>
-          <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden border border-white/5">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${(charityPool / 10000000) * 100}%` }}
-              className="h-full bg-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.8)]"
-            />
-          </div>
+          
+          {/* Outer Glow Effect on Top Edge */}
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gold-light/40 blur-[1px]" />
         </div>
 
         {/* Marquee Announcement - Ticker Style (Now below Charity Pool) */}

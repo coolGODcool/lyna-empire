@@ -7,21 +7,30 @@ interface SupportPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (amount: number) => void;
+  initialAmount?: number;
 }
 
-export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPanelProps) {
-  const [amount, setAmount] = useState(10);
+export default function SupportPanel({ isOpen, onClose, onConfirm, initialAmount = 10 }: SupportPanelProps) {
+  const [amount, setAmount] = useState(initialAmount);
   const [isCustom, setIsCustom] = useState(false);
   const [showCoins, setShowCoins] = useState(false);
   const [offsetY, setOffsetY] = useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const holdTimer = React.useRef<NodeJS.Timeout | null>(null);
   const holdInterval = React.useRef<NodeJS.Timeout | null>(null);
+  const accelerationTimer = React.useRef<NodeJS.Timeout | null>(null);
 
   const quickAmounts = [5, 10, 50];
 
   React.useEffect(() => {
+    if (isOpen) {
+      setAmount(initialAmount);
+    }
+  }, [isOpen, initialAmount]);
+
+  React.useEffect(() => {
     if (!window.visualViewport) return;
+    // ... (rest of visualViewport logic)
 
     const handleResize = () => {
       const viewport = window.visualViewport;
@@ -55,19 +64,31 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
 
   const startHold = (delta: number) => {
     handleAdjust(delta);
-    if (navigator.vibrate) navigator.vibrate(10);
+    if (navigator.vibrate) navigator.vibrate(5);
+    
+    let currentInterval = 150;
     
     holdTimer.current = setTimeout(() => {
-      holdInterval.current = setInterval(() => {
+      const runInterval = () => {
         handleAdjust(delta);
-        if (navigator.vibrate) navigator.vibrate(10);
-      }, 100);
+        if (navigator.vibrate) navigator.vibrate(5);
+        
+        // Accelerate
+        if (currentInterval > 50) {
+          currentInterval -= 10;
+          if (holdInterval.current) clearInterval(holdInterval.current);
+          holdInterval.current = setInterval(runInterval, currentInterval);
+        }
+      };
+      
+      holdInterval.current = setInterval(runInterval, currentInterval);
     }, 500);
   };
 
   const stopHold = () => {
     if (holdTimer.current) clearTimeout(holdTimer.current);
     if (holdInterval.current) clearInterval(holdInterval.current);
+    if (accelerationTimer.current) clearTimeout(accelerationTimer.current);
   };
 
   const setFixedAmount = (val: number) => {
@@ -141,8 +162,12 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                 {quickAmounts.map((amt) => (
                   <button
                     key={amt}
-                    onClick={() => setFixedAmount(amt)}
-                    className={`py-3 rounded-xl border-2 transition-all font-black ${
+                    onMouseDown={() => startHold(amt)}
+                    onMouseUp={stopHold}
+                    onMouseLeave={stopHold}
+                    onTouchStart={(e) => { e.preventDefault(); startHold(amt); }}
+                    onTouchEnd={stopHold}
+                    className={`py-3 rounded-xl border-2 transition-all font-black select-none touch-callout-none ${
                       !isCustom && amount === amt
                         ? "bg-gold-primary/20 border-gold-primary text-gold-primary shadow-[0_0_15px_rgba(212,175,55,0.2)]"
                         : "bg-white/5 border-white/10 text-zinc-500 hover:border-white/20"
@@ -156,7 +181,7 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                     setIsCustom(true);
                     setTimeout(() => inputRef.current?.focus(), 100);
                   }}
-                  className={`py-3 rounded-xl border-2 transition-all font-black ${
+                  className={`py-3 rounded-xl border-2 transition-all font-black select-none touch-callout-none ${
                     isCustom
                       ? "bg-gold-primary/20 border-gold-primary text-gold-primary shadow-[0_0_15px_rgba(212,175,55,0.2)]"
                       : "bg-white/5 border-white/10 text-zinc-500 hover:border-white/20"
@@ -178,7 +203,7 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                       onTouchStart={(e) => { e.preventDefault(); startHold(-1); }}
                       onTouchEnd={stopHold}
                       disabled={amount <= 5}
-                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all disabled:opacity-20"
+                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all disabled:opacity-20 select-none touch-callout-none"
                     >
                       <Minus className="w-6 h-6" />
                     </button>
@@ -205,7 +230,7 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                       onMouseLeave={stopHold}
                       onTouchStart={(e) => { e.preventDefault(); startHold(1); }}
                       onTouchEnd={stopHold}
-                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all"
+                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all select-none touch-callout-none"
                     >
                       <Plus className="w-6 h-6" />
                     </button>
@@ -225,13 +250,18 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
 
             {/* Footer */}
             <div className="p-6 bg-black/40 border-t border-white/5">
+              <div className="text-center mb-4">
+                <p className="text-[10px] text-gold-primary/60 font-bold uppercase tracking-widest">
+                  8% 國庫 | 1% 公益 | 1% 影片主
+                </p>
+              </div>
               <button
                 onClick={handleConfirm}
                 disabled={amount < 5}
                 className={`w-full py-5 rounded-2xl font-black text-lg uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-lg ${
                   amount < 5
                     ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-gold-dark via-gold-primary to-gold-dark text-black hover:scale-[1.02] active:scale-[0.95] shadow-gold-primary/40 animate-pulse-slow"
+                    : "bg-gradient-to-r from-gold-dark via-gold-primary to-gold-dark text-black hover:scale-[1.02] active:scale-[0.95] shadow-gold-primary/40 gold-shimmer"
                 }`}
               >
                 <Sparkles className="w-5 h-5" />

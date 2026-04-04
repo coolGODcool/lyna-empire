@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Altate Global Auction Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #000; color: #fff; }
+        .gold-gradient-text {
+            background: linear-gradient(to bottom, #fef08a, #d4af37, #a16207);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 1.5rem;
+        }
+        @keyframes swing {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+        }
+        @keyframes swing-fast {
+            0%, 100% { transform: rotate(-30deg); }
+            50% { transform: rotate(30deg); }
+        }
+        @keyframes hammer-fall {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(200px) scale(1.5); opacity: 0.8; }
+        }
+        .gavel-swing { animation: swing 1.5s ease-in-out infinite; }
+        .gavel-swing-fast { animation: swing-fast 0.4s ease-in-out infinite; }
+        .gavel-fall { animation: hammer-fall 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        .glow-gold { box-shadow: 0 0 30px rgba(212, 175, 55, 0.3); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen overflow-hidden">
+    <div class="max-w-md w-full p-8 glass-card glow-gold text-center space-y-8 relative">
+        <div class="space-y-2">
+            <h1 class="text-3xl font-black gold-gradient-text italic tracking-tighter">帝國拍賣行</h1>
+            <p class="text-[10px] text-gold-primary/60 uppercase tracking-[0.3em]">Triple-Gavel Mechanism Preview</p>
+        </div>
+
+        <!-- Timer Section -->
+        <div class="flex justify-center gap-4">
+            <div id="round-container" class="flex gap-2">
+                <div class="round-dot w-10 h-10 rounded-xl bg-yellow-500 text-black flex items-center justify-center font-black shadow-[0_0_15px_rgba(212,175,55,0.4)]">1</div>
+                <div class="round-dot w-10 h-10 rounded-xl bg-white/5 text-gray-500 flex items-center justify-center font-black">2</div>
+                <div class="round-dot w-10 h-10 rounded-xl bg-white/5 text-gray-500 flex items-center justify-center font-black">3</div>
+            </div>
+            <div class="w-px bg-white/10"></div>
+            <div class="flex items-center gap-2">
+                <span id="timer" class="text-4xl font-black font-mono text-white">00:30</span>
+            </div>
+        </div>
+
+        <!-- Gavel Section -->
+        <div class="relative h-64 flex items-center justify-center">
+            <div id="gavel-box" class="p-6 rounded-full bg-black/40 border border-gold-primary/40 text-yellow-500 gavel-swing">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 12.5-8 8a2.11 2.11 0 1 1-3-3l8-8"/><path d="m16 16 2 2"/><path d="m2 2 16 16"/><path d="m3.5 3.5 8 8"/><path d="m13.5 6.5 4 4"/><path d="m16 4 4 4"/><path d="m21 12-5 5"/><path d="m12 21 5-5"/></svg>
+            </div>
+            
+            <!-- Sold Overlay -->
+            <div id="sold-text" class="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none">
+                <h2 class="text-6xl font-black text-white italic drop-shadow-[0_0_40px_rgba(212,175,55,1)]">SOLD</h2>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="space-y-4">
+            <button id="bid-btn" class="w-full py-4 bg-yellow-500 text-black font-black uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-transform active:scale-95">
+                出價 (Reset Timer)
+            </button>
+            <p id="lyna-msg" class="text-sm text-yellow-200/80 italic">「猶豫就會敗北，這張卡值得你傾家蕩產。💸」</p>
+        </div>
+    </div>
+
+    <script>
+        let timeLeft = 30;
+        let round = 1;
+        let isSold = false;
+        const timerEl = document.getElementById('timer');
+        const gavelBox = document.getElementById('gavel-box');
+        const bidBtn = document.getElementById('bid-btn');
+        const roundDots = document.querySelectorAll('.round-dot');
+        const lynaMsg = document.getElementById('lyna-msg');
+        const soldText = document.getElementById('sold-text');
+
+        function updateTimer() {
+            if (isSold) return;
+            timeLeft--;
+            if (timeLeft < 0) {
+                if (round < 3) {
+                    round++;
+                    timeLeft = 30;
+                    updateRounds();
+                } else {
+                    finishAuction();
+                    return;
+                }
+            }
+            timerEl.textContent = `00:${timeLeft.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 5) {
+                timerEl.classList.add('text-red-500', 'animate-pulse');
+                lynaMsg.textContent = "「最後五秒，不出價這就是別人的了！😏」";
+            } else {
+                timerEl.classList.remove('text-red-500', 'animate-pulse');
+            }
+        }
+
+        function updateRounds() {
+            roundDots.forEach((dot, i) => {
+                if (i + 1 === round) {
+                    dot.classList.add('bg-yellow-500', 'text-black', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
+                    dot.classList.remove('bg-white/5', 'text-gray-500');
+                } else {
+                    dot.classList.remove('bg-yellow-500', 'text-black', 'shadow-[0_0_15px_rgba(212,175,55,0.4)]');
+                    dot.classList.add('bg-white/5', 'text-gray-500');
+                }
+            });
+            if (round === 3) {
+                gavelBox.classList.remove('gavel-swing');
+                gavelBox.classList.add('gavel-swing-fast');
+                lynaMsg.textContent = "「第三拍！氣氛開始緊張了，誰才是真正的領主？🔥」";
+            }
+        }
+
+        function finishAuction() {
+            isSold = true;
+            gavelBox.classList.remove('gavel-swing', 'gavel-swing-fast');
+            gavelBox.classList.add('gavel-fall');
+            soldText.style.opacity = '1';
+            bidBtn.disabled = true;
+            bidBtn.classList.add('opacity-50');
+            lynaMsg.textContent = "「成交！國庫收割完畢。🥂」";
+        }
+
+        bidBtn.addEventListener('click', () => {
+            if (isSold) return;
+            timeLeft = 30;
+            timerEl.textContent = `00:30`;
+            lynaMsg.textContent = "「有人加價了！誰還要挑戰？💰」";
+        });
+
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>

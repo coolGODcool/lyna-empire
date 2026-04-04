@@ -195,7 +195,8 @@ export default function App() {
   const [showPlusPanel, setShowPlusPanel] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>("1");
   const [showFountain, setShowFountain] = useState(false);
-  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
+  const [isUserMuted, setIsUserMuted] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   // 任務二：頂部「公益金季度百分比」算法 (Quarterly Progress Logic)
@@ -283,10 +284,10 @@ export default function App() {
 
       if (isInCenter) {
         if (clickCount.current === 1) {
-          // 隱性解鎖聲音
-          if (isGlobalMuted) setIsGlobalMuted(false);
-          // 移除全螢幕點擊預約，改為僅解鎖聲音
+          // 單擊：切換 播放/暫停
+          setIsPaused(prev => !prev);
         } else if (clickCount.current === 2) {
+          // 雙擊：噴射金心特效
           if (isLiked) {
             setLikes(prev => prev - 1);
             setIsLiked(false);
@@ -298,11 +299,12 @@ export default function App() {
             setTimeout(() => setShowFountain(false), 1000);
           }
         } else if (clickCount.current >= 3) {
+          // 三擊：發布懸賞
           setShowBounty(true);
         }
       }
       clickCount.current = 0;
-    }, 250); // 縮短延遲以提升反應速度
+    }, 250);
   };
 
   const handleOrderConfirm = (data: OrderData) => {
@@ -319,11 +321,10 @@ export default function App() {
 
   return (
     <div 
-      onClick={() => isGlobalMuted && setIsGlobalMuted(false)}
       className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom"
     >
       {/* CEO Header */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-4 flex flex-col gap-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm">
+      <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]">
         {/* Search System - Top Left */}
         <SearchSystem 
           onExpandChange={setIsSearchExpanded}
@@ -337,26 +338,26 @@ export default function App() {
         />
 
         {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
-        <div className="mx-[-1.5rem] relative h-10 matte-gold-track border-b border-gold-primary/30 shadow-[0_0_25px_rgba(212,175,55,0.4)] overflow-hidden z-[60]">
+        <div className="mx-[-1.5rem] relative h-10 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] overflow-hidden z-[60]">
           {/* Liquid Gold Progress Fill - Based on Date Percentage */}
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${quarterlyProgress}%` }}
-            className="absolute top-0 left-0 h-full liquid-gold shadow-[0_0_20px_rgba(212,175,55,0.7)]"
+            className="absolute top-0 left-0 h-full liquid-gold shadow-[0_0_20px_rgba(212,175,55,0.6)]"
           />
           
           {/* Text Overlay - Large & Prestigious */}
           <div className={`absolute inset-0 flex items-center justify-center px-6 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
               <Sparkles size={18} className="text-gold-light animate-pulse" />
-              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
                 本季結算倒數 {quarterlyProgress}% | 目前帝國累計公益金 ${(charityPool / 1000000).toFixed(2)}M
               </span>
             </div>
           </div>
           
-          {/* Outer Glow Effect on Top Edge */}
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-gold-light/40 blur-[1px]" />
+          {/* Halo Glow Effect */}
+          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gold-primary/30 shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
         </div>
 
         {/* Marquee Announcement - Ticker Style (Now below Charity Pool) */}
@@ -402,14 +403,14 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={(e) => { e.stopPropagation(); setIsGlobalMuted(!isGlobalMuted); }}
-              className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
+              onClick={(e) => { e.stopPropagation(); setIsUserMuted(!isUserMuted); }}
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
             >
-              {isGlobalMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              {isUserMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }}
-              className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-gold-primary/30 px-3 py-1.5 rounded-full hover:bg-gold-primary/20 transition-all active:scale-95"
+              className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/30 px-3 py-1.5 rounded-full hover:bg-gold-primary/20 transition-all active:scale-95"
             >
               <span className="text-[10px] font-bold gold-gradient-text">
                 {showBalance ? `L-Coin: $${balance.toLocaleString()}` : "L-Coin: *****"}
@@ -452,7 +453,8 @@ export default function App() {
                       src={store.video} 
                       poster={store.image} 
                       isActive={activeVideoId === store.id} 
-                      muted={isGlobalMuted}
+                      isPaused={isPaused && activeVideoId === store.id}
+                      muted={isUserMuted}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
                     

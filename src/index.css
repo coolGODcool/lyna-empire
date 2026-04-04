@@ -15,6 +15,21 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     /* 防止手機端點擊延遲 */
     touch-action: manipulation;
+    /* 任務一：徹底禁用系統預設長按行為 (Anti-Selection) */
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 輸入框排除 */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
   }
 
   /* 防止 iOS 自動縮放：字體必須至少 16px */

@@ -199,6 +199,25 @@ export default function App() {
   const touchStartPos = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('data-id');
+            if (id) setActiveVideoId(id);
+          }
+        });
+      },
+      { threshold: 0.6 }
+    );
+
+    const items = document.querySelectorAll('.snap-item');
+    items.forEach((item) => observer.observe(item));
+
+    return () => observer.disconnect();
+  }, [stores, activeTab]);
+
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, store: Store) => {
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;

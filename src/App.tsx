@@ -17,11 +17,19 @@ import {
   Clock,
   X,
   Mic,
-  Spade
+  Spade,
+  Coins,
+  ShieldCheck,
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import Butler from "./components/Butler";
 import Quests from "./components/Quests";
 import Lounge from "./components/Lounge";
+import OrderDrawer, { OrderData } from "./components/OrderDrawer";
+import BountyPanel from "./components/BountyPanel";
+import LevelUpAnimation from "./components/LevelUpAnimation";
+import VideoPlayer from "./components/VideoPlayer";
 
 // RPG 公告欄美學重建 - Navbar 精緻化
 function LynaLIcon({ active }: { active: boolean }) {
@@ -72,6 +80,7 @@ interface Store {
   name: string;
   description: string;
   image: string;
+  video: string;
   category: string;
   rating: number;
   distance: string;
@@ -91,6 +100,7 @@ export default function App() {
       name: "萊娜精品咖啡 (旗艦店)", 
       description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
       image: "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80",
+      video: "/assets/videos/coffee.webm",
       category: "精品餐飲",
       rating: 9.9,
       distance: "0.8KM",
@@ -104,6 +114,7 @@ export default function App() {
       name: "五五六六和牛燒肉", 
       description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
       image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+      video: "/assets/videos/wagyu.webm",
       category: "頂級美食",
       rating: 9.7,
       distance: "1.2KM",
@@ -117,6 +128,7 @@ export default function App() {
       name: "黑金流光威士忌吧", 
       description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
       image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80",
+      video: "/assets/videos/whisky.webm",
       category: "夜生活",
       rating: 9.5,
       distance: "2.5KM",
@@ -130,6 +142,7 @@ export default function App() {
       name: "帝國極限體能館", 
       description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
       image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
+      video: "/assets/videos/gym.webm",
       category: "運動健身",
       rating: 9.2,
       distance: "3.0KM",
@@ -143,6 +156,7 @@ export default function App() {
       name: "LN-001 專屬訂製西服", 
       description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
       image: "https://images.unsplash.com/photo-1594932224828-b4b057b7d6ee?auto=format&fit=crop&w=800&q=80",
+      video: "/assets/videos/suit.webm",
       category: "精品服飾",
       rating: 10.0,
       distance: "全域配送",
@@ -157,17 +171,50 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [showBounty, setShowBounty] = useState(false);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
-  const [orderSubMode, setOrderSubMode] = useState<'instant' | 'reserve' | null>(null);
+  const [showLevelUp, setShowLevelUp] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [showMarquee, setShowMarquee] = useState(true);
   const [longPressActive, setLongPressActive] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [orderForGirlfriend, setOrderForGirlfriend] = useState(false);
   const [isShopRedirect, setIsShopRedirect] = useState(false);
+  const [likes, setLikes] = useState(995); // Start near threshold
+  const [trustScore, setTrustScore] = useState(79); // Start near threshold
+  const [balance, setBalance] = useState(24500);
+  const [charityPool, setCharityPool] = useState(8200000); // 8.2M
+  const [showPlusPanel, setShowPlusPanel] = useState(false);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>("1");
+  const [showFountain, setShowFountain] = useState(false);
   
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for Video Autoplay
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveVideoId(entry.target.getAttribute("data-id"));
+          }
+        });
+      },
+      { threshold: 0.7 }
+    );
+
+    const items = document.querySelectorAll(".snap-item");
+    items.forEach((item) => observer.observe(item));
+
+    return () => observer.disconnect();
+  }, [stores, activeTab]);
+
+  // Level Up Check
+  useEffect(() => {
+    if (likes >= 1000 && trustScore >= 80 && !showLevelUp) {
+      setShowLevelUp(true);
+    }
+  }, [likes, trustScore]);
 
   // URL shopId 穿透邏輯
   useEffect(() => {
@@ -206,14 +253,33 @@ export default function App() {
     if (clickTimer.current) clearTimeout(clickTimer.current);
 
     clickTimer.current = setTimeout(() => {
-      if (clickCount.current === 2) {
+      if (clickCount.current === 1) {
         setShowOrderPanel(true);
-        setOrderSubMode(null);
+      } else if (clickCount.current === 2) {
+        setLikes(prev => prev + 1);
+        setShowFountain(true);
+        setTimeout(() => setShowFountain(false), 1000);
       } else if (clickCount.current >= 3) {
         setShowBounty(true);
       }
       clickCount.current = 0;
     }, 300);
+  };
+
+  const handleOrderConfirm = (data: OrderData) => {
+    const treasuryFee = data.totalAmount * 0.08;
+    const charityFee = data.totalAmount * 0.01;
+    const cashback = data.totalAmount * 0.01;
+    
+    setBalance(prev => prev - data.totalAmount + cashback);
+    setCharityPool(prev => prev + charityFee);
+    
+    if (data.recipient === 'boss') {
+      setTrustScore(prev => prev + 5);
+    }
+    
+    // Show confirmation toast or message
+    console.log(`Order confirmed: ${data.totalAmount}, Treasury: ${treasuryFee}, Charity: ${charityFee}`);
   };
 
   return (
@@ -294,6 +360,31 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="snap-container"
             >
+              {/* Charity Pool Progress Bar */}
+              <div className="fixed top-28 left-6 right-6 z-40">
+                <div className="glass-card p-4 border-gold-primary/20 bg-black/40 backdrop-blur-md space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Heart size={14} className="text-gold-primary" />
+                      <span className="text-[10px] font-black gold-gradient-text uppercase tracking-widest">季末公益金累積進度 (1%)</span>
+                    </div>
+                    <span className="text-[10px] font-black font-mono text-white">${(charityPool / 1000000).toFixed(1)}M / $10M</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(charityPool / 10000000) * 100}%` }}
+                      className="h-full bg-gradient-to-r from-gold-dark to-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">僅限 TrustScore 80+ 子民參與治理投票</p>
+                    <button className="text-[8px] font-black text-gold-primary uppercase tracking-widest flex items-center gap-1">
+                      前往投票 <ChevronRight size={10} />
+                    </button>
+                  </div>
+                </div>
+              </div>
               {loading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
@@ -302,17 +393,17 @@ export default function App() {
                 stores.map((store) => (
                   <div 
                     key={store.id} 
+                    data-id={store.id}
                     className="snap-item relative h-full"
                     onMouseDown={() => handleInteractionStart(store)}
                     onMouseUp={handleInteractionEnd}
                     onTouchStart={() => handleInteractionStart(store)}
                     onTouchEnd={handleInteractionEnd}
                   >
-                    <img 
-                      src={store.image} 
-                      alt={store.name}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
+                    <VideoPlayer 
+                      src={store.video} 
+                      poster={store.image} 
+                      isActive={activeVideoId === store.id} 
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
                     
@@ -346,11 +437,37 @@ export default function App() {
                         <span className="text-[9px] font-black text-gold-primary drop-shadow-md">{store.queueTime}</span>
                       </div>
 
-                      <InteractionButton icon={<Heart size={22} />} label="喜歡" />
+                      <InteractionButton icon={<Heart size={22} className={likes > 995 ? "text-red-500 fill-red-500" : ""} />} label={likes.toLocaleString()} />
                       <InteractionButton icon={<Gift size={22} />} label="贊助" />
                       <InteractionButton icon={<MessageSquare size={22} />} label="留言" />
                       <InteractionButton icon={<Share2 size={22} />} label="分享" />
                     </div>
+
+                    {/* Gold Fountain Visual (Double Tap) */}
+                    <AnimatePresence>
+                      {showFountain && (
+                        <motion.div 
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 1.5, opacity: 0 }}
+                          className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                        >
+                          <div className="relative">
+                            {[...Array(12)].map((_, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ y: 0, x: 0, opacity: 1 }}
+                                animate={{ y: -200 - Math.random() * 100, x: (Math.random() - 0.5) * 400, opacity: 0, rotate: 360 }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="absolute text-gold-primary"
+                              >
+                                <Coins size={32} fill="currentColor" />
+                              </motion.div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Long Press Ripple Effect */}
                     <AnimatePresence>
@@ -396,134 +513,74 @@ export default function App() {
         </AnimatePresence>
       </main>
 
+      {/* Order Panel (Single Tap) */}
+      <OrderDrawer 
+        isOpen={showOrderPanel}
+        onClose={() => setShowOrderPanel(false)}
+        storeName={selectedStore?.name || ""}
+        onConfirm={handleOrderConfirm}
+      />
+
       {/* Bounty Panel (Triple Tap) */}
+      <BountyPanel 
+        isOpen={showBounty}
+        onClose={() => setShowBounty(false)}
+        onConfirm={(amount) => setBalance(prev => prev - amount)}
+      />
+
+      {/* Level Up Animation */}
+      <LevelUpAnimation 
+        isOpen={showLevelUp}
+        onClose={() => setShowLevelUp(false)}
+        levelName="榮耀晉升：銀牌說客"
+        commissionRate="0.6%"
+      />
+
+      {/* Plus Button Panel (Upload) */}
       <AnimatePresence>
-        {showBounty && (
+        {activeTab === "plus" && (
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            className="fixed inset-0 z-[400] bg-black/95 backdrop-blur-2xl p-8 pt-24 space-y-8"
           >
-            <div className="w-full max-w-sm glass-card p-8 border-gold-primary/40 space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-black gold-gradient-text italic">懸賞發布面板</h3>
-                <button onClick={() => setShowBounty(false)} className="text-gold-primary"><X /></button>
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-black gold-gradient-text italic tracking-tighter">發布帝國動態</h3>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">領主 0 元 | 子民 200 L</p>
               </div>
-              
-              <div className="space-y-4">
-                <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">當前懸賞金額</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl font-black font-mono text-white">30 <span className="text-sm">L-Coin</span></span>
-                    <div className="flex gap-2">
-                      <button className="px-3 py-1 bg-gold-primary/20 border border-gold-primary/40 text-gold-primary text-xs font-bold rounded-lg hover:bg-gold-primary hover:text-black transition-colors">+5</button>
-                      <button className="px-3 py-1 bg-gold-primary/20 border border-gold-primary/40 text-gold-primary text-xs font-bold rounded-lg hover:bg-gold-primary hover:text-black transition-colors">+10</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">實時行情觀測</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    <MarketRow price="30點" status="0人接單" color="text-gray-500" />
-                    <MarketRow price="35點" status="3人待命中" color="text-gold-primary" />
-                    <MarketRow price="40點" status="12人搶單" color="text-green-500" />
-                  </div>
-                </div>
-              </div>
-
-              <button className="w-full py-4 bg-gold-primary text-black font-black uppercase tracking-[0.2em] rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.4)]">
-                確認發布懸賞
-              </button>
+              <button onClick={() => setActiveTab("home")} className="p-3 rounded-full bg-white/5 text-gold-primary"><X size={24} /></button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Order Panel (Double Tap) */}
-      <AnimatePresence>
-        {showOrderPanel && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
-          >
-            <div className="w-full max-w-sm glass-card p-8 border-gold-primary/40 space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-black gold-gradient-text italic">
-                  {selectedStore?.serviceMode === 'mixed' ? "行動選單" : (selectedStore?.serviceMode === 'reserve' ? "時段預約" : "快速訂餐")}
-                </h3>
-                <button onClick={() => setShowOrderPanel(false)} className="text-gold-primary"><X /></button>
+            <div className="space-y-6">
+              <div className="aspect-video rounded-3xl border-2 border-dashed border-gold-primary/30 flex flex-col items-center justify-center gap-4 bg-gold-primary/5 hover:bg-gold-primary/10 transition-all cursor-pointer">
+                <Plus size={48} className="text-gold-primary/40" />
+                <p className="text-sm font-black text-gold-primary/60 uppercase tracking-widest">點擊上傳 .webm 高清影片</p>
               </div>
 
-              {selectedStore?.serviceMode === 'mixed' && !orderSubMode ? (
-                <div className="grid grid-cols-1 gap-4">
-                  <button 
-                    onClick={() => setOrderSubMode('instant')}
-                    className="w-full py-6 bg-gold-primary/10 border-2 border-gold-primary/40 rounded-2xl flex flex-col items-center gap-2 hover:bg-gold-primary/20 transition-all"
-                  >
-                    <Utensils className="text-gold-primary" size={32} />
-                    <span className="font-black text-white tracking-widest">即時點餐</span>
-                  </button>
-                  <button 
-                    onClick={() => setOrderSubMode('reserve')}
-                    className="w-full py-6 bg-white/5 border-2 border-white/10 rounded-2xl flex flex-col items-center gap-2 hover:bg-white/10 transition-all"
-                  >
-                    <Clock className="text-gold-primary" size={32} />
-                    <span className="font-black text-white tracking-widest">時段預約</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {(selectedStore?.serviceMode === 'reserve' || orderSubMode === 'reserve') ? (
-                    <div className="space-y-4">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest">熱門空檔時間表</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <TimeSlot day="明日" time="14:00" />
-                        <TimeSlot day="明日" time="16:30" />
-                        <TimeSlot day="後日" time="10:00" />
-                        <TimeSlot day="後日" time="15:00" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="bg-gold-primary/10 p-4 rounded-xl border border-gold-primary/20 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Clock className="text-gold-primary" />
-                          <div>
-                            <p className="text-xs font-bold text-white">預計取餐時間</p>
-                            <p className="text-[10px] text-gold-primary/60">目前排隊: {selectedStore?.queueTime}</p>
-                          </div>
-                        </div>
-                        <span className="text-lg font-black font-mono text-gold-primary">12:45</span>
-                      </div>
-                      <button 
-                        onClick={() => setOrderForGirlfriend(!orderForGirlfriend)}
-                        className={`w-full py-4 border transition-all rounded-xl flex items-center justify-center gap-2 ${orderForGirlfriend ? 'bg-gold-primary text-black border-gold-primary' : 'border-gold-primary/40 text-gold-primary'}`}
-                      >
-                        <Heart size={18} fill={orderForGirlfriend ? "black" : "none"} /> 
-                        <span className="font-bold">再訂一份給女友</span>
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3">
-                    {selectedStore?.serviceMode === 'mixed' && (
-                      <button 
-                        onClick={() => setOrderSubMode(null)}
-                        className="flex-1 py-4 border border-white/20 text-white font-bold rounded-xl"
-                      >
-                        返回
-                      </button>
-                    )}
-                    <button className="flex-[2] py-4 bg-gold-primary text-black font-black uppercase tracking-[0.2em] rounded-xl shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                      確認送出
+              <div className="space-y-4">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">強制屬性標籤 (啟動導購分潤)</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {['食', '衣', '住', '行', '育', '樂'].map(tag => (
+                    <button key={tag} className="py-4 bg-white/5 border border-white/10 rounded-2xl text-lg font-black text-white hover:border-gold-primary hover:text-gold-primary transition-all">
+                      {tag}
                     </button>
-                  </div>
+                  ))}
                 </div>
-              )}
+              </div>
+
+              <div className="p-6 bg-gold-primary/10 rounded-3xl border border-gold-primary/20 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-white">上傳規費</span>
+                  <span className="text-lg font-black font-mono text-gold-primary">200 L-Coin</span>
+                </div>
+                <p className="text-[8px] text-gold-primary/60 font-bold uppercase tracking-widest">領主級別 (LN-001) 已自動減免手續費</p>
+              </div>
+
+              <button className="w-full py-6 bg-gold-primary text-black font-black text-xl uppercase tracking-[0.3em] rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.4)]">
+                確認發布
+              </button>
             </div>
           </motion.div>
         )}

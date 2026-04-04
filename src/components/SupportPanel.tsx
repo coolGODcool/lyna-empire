@@ -13,8 +13,26 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
   const [amount, setAmount] = useState(10);
   const [isCustom, setIsCustom] = useState(false);
   const [showCoins, setShowCoins] = useState(false);
+  const [offsetY, setOffsetY] = useState(0);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const quickAmounts = [5, 10, 50];
+
+  React.useEffect(() => {
+    if (!window.visualViewport) return;
+
+    const handleResize = () => {
+      const viewport = window.visualViewport;
+      if (!viewport) return;
+      
+      const offset = window.innerHeight - viewport.height;
+      // If keyboard is up, shift the panel up
+      setOffsetY(offset > 0 ? -offset * 0.5 : 0);
+    };
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    return () => window.visualViewport?.removeEventListener("resize", handleResize);
+  }, []);
 
   const triggerCoinDrop = () => {
     setShowCoins(true);
@@ -55,7 +73,7 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
           {/* Modal Content */}
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            animate={{ scale: 1, opacity: 1, y: offsetY }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="relative w-full max-w-md bg-zinc-900/95 border border-gold-primary/30 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(212,175,55,0.2)] pointer-events-auto"
@@ -115,7 +133,10 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                   </button>
                 ))}
                 <button
-                  onClick={() => setIsCustom(true)}
+                  onClick={() => {
+                    setIsCustom(true);
+                    setTimeout(() => inputRef.current?.focus(), 100);
+                  }}
                   className={`py-3 rounded-xl border-2 transition-all font-black ${
                     isCustom
                       ? "bg-gold-primary/20 border-gold-primary text-gold-primary shadow-[0_0_15px_rgba(212,175,55,0.2)]"
@@ -139,7 +160,20 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
                       <Minus className="w-6 h-6" />
                     </button>
                     <div className="flex flex-col items-center">
-                      <span className="text-5xl font-black font-mono gold-gradient-text">{amount}</span>
+                      {isCustom ? (
+                        <div className="relative">
+                          <input
+                            ref={inputRef}
+                            type="number"
+                            inputMode="numeric"
+                            value={amount}
+                            onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                            className="w-32 bg-transparent text-5xl font-black font-mono gold-gradient-text text-center focus:outline-none"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-5xl font-black font-mono gold-gradient-text">{amount}</span>
+                      )}
                       <span className="text-[10px] text-gold-primary/60 font-bold tracking-[0.2em]">L-COIN</span>
                     </div>
                     <button

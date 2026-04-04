@@ -53,13 +53,13 @@ export default function OrderDrawer({ isOpen, onClose, storeName, onConfirm }: O
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300]"
           />
           <motion.div 
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-gold-primary/30 rounded-t-[2.5rem] z-[301] p-8 pb-12"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed inset-0 flex items-center justify-center p-6 z-[301] pointer-events-auto"
           >
-            <div className="max-w-md mx-auto space-y-8">
+            <div className="w-full max-w-sm glass-card p-8 border-gold-primary/40 space-y-8 shadow-[0_0_50px_rgba(212,175,55,0.3)]">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-xl font-black gold-gradient-text italic tracking-tighter">{storeName}</h3>
@@ -133,7 +133,7 @@ export default function OrderDrawer({ isOpen, onClose, storeName, onConfirm }: O
                     className="p-4 bg-gold-primary/5 border border-gold-primary/20 rounded-xl flex items-center gap-3"
                   >
                     <Users size={18} className="text-gold-primary" />
-                    <p className="text-[10px] text-gold-primary font-bold uppercase tracking-widest">已自動鎖定商圈內 12 位活躍用戶</p>
+                    <p className="text-[10px] text-gold-primary font-bold uppercase tracking-widest leading-tight">已自動鎖定商圈內 12 位活躍用戶</p>
                   </motion.div>
                 )}
               </div>
@@ -159,6 +159,7 @@ export default function OrderDrawer({ isOpen, onClose, storeName, onConfirm }: O
               </button>
             </div>
           </motion.div>
+
         </>
       )}
     </AnimatePresence>

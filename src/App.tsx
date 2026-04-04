@@ -191,6 +191,7 @@ export default function App() {
   const [showPlusPanel, setShowPlusPanel] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>("1");
   const [showFountain, setShowFountain] = useState(false);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
   
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
@@ -236,25 +237,27 @@ export default function App() {
     if (clickTimer.current) clearTimeout(clickTimer.current);
 
     clickTimer.current = setTimeout(() => {
-      if (clickCount.current === 1) {
-        // 點擊區域過濾：僅限水平中間 60% (20%vw - 80%vw)
-        const screenWidth = window.innerWidth;
-        if (x >= screenWidth * 0.2 && x <= screenWidth * 0.8) {
+      const screenWidth = window.innerWidth;
+      // 僅限水平中間 60% (20%vw - 80%vw)
+      const isInCenter = x >= screenWidth * 0.2 && x <= screenWidth * 0.8;
+
+      if (isInCenter) {
+        if (clickCount.current === 1) {
           setShowOrderPanel(true);
+        } else if (clickCount.current === 2) {
+          if (isLiked) {
+            setLikes(prev => prev - 1);
+            setIsLiked(false);
+            setShowFountain(false);
+          } else {
+            setLikes(prev => prev + 1);
+            setIsLiked(true);
+            setShowFountain(true);
+            setTimeout(() => setShowFountain(false), 1000);
+          }
+        } else if (clickCount.current >= 3) {
+          setShowBounty(true);
         }
-      } else if (clickCount.current === 2) {
-        if (isLiked) {
-          setLikes(prev => prev - 1);
-          setIsLiked(false);
-          setShowFountain(false);
-        } else {
-          setLikes(prev => prev + 1);
-          setIsLiked(true);
-          setShowFountain(true);
-          setTimeout(() => setShowFountain(false), 1000);
-        }
-      } else if (clickCount.current >= 3) {
-        setShowBounty(true);
       }
       clickCount.current = 0;
     }, 300);
@@ -268,16 +271,15 @@ export default function App() {
     setBalance(prev => prev - data.totalAmount + cashback);
     setCharityPool(prev => prev + charityFee);
     
-    if (data.recipient === 'boss') {
-      setTrustScore(prev => prev + 5);
-    }
-    
     // Show confirmation toast or message
     console.log(`Order confirmed: ${data.totalAmount}, Treasury: ${treasuryFee}, Charity: ${charityFee}`);
   };
 
   return (
-    <div className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom">
+    <div 
+      onClick={() => isGlobalMuted && setIsGlobalMuted(false)}
+      className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom"
+    >
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-4 flex flex-col gap-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm">
         {/* Charity Pool - Top Center */}
@@ -385,6 +387,7 @@ export default function App() {
                       src={store.video} 
                       poster={store.image} 
                       isActive={activeVideoId === store.id} 
+                      muted={isGlobalMuted}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
                     
@@ -422,24 +425,6 @@ export default function App() {
                       <p className="text-xs text-gray-300 line-clamp-2 drop-shadow-md font-medium">
                         {store.description}
                       </p>
-
-                      {/* 預約與加一份按鈕 - 恢復 UI */}
-                      <div className="flex gap-3 pt-2">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setShowOrderPanel(true); }}
-                          className="flex-1 py-3 bg-black/60 backdrop-blur-md border border-gold-primary/50 rounded-xl flex items-center justify-center gap-2 group hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.3)]"
-                        >
-                          <Utensils size={16} className="text-gold-primary group-hover:scale-110 transition-transform" />
-                          <span className="text-xs font-black text-gold-primary uppercase tracking-widest">立即預約</span>
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setShowOrderPanel(true); }}
-                          className="px-5 py-3 bg-gold-primary text-black rounded-xl flex items-center justify-center gap-2 hover:bg-gold-light transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                        >
-                          <Plus size={16} strokeWidth={3} />
-                          <span className="text-xs font-black uppercase tracking-widest">加一份</span>
-                        </button>
-                      </div>
                     </div>
 
                     {/* Right Sidebar Interaction Chain */}

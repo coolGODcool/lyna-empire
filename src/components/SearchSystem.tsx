@@ -60,8 +60,20 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
           height: isExpanded ? "auto" : "40px"
         }}
         transition={{ type: "spring", damping: 20, stiffness: 200 }}
-        className="relative bg-black/60 backdrop-blur-xl border border-gold-primary/40 rounded-br-2xl overflow-hidden shadow-[0_0_20px_rgba(212,175,55,0.2)]"
+        className="relative bg-black/30 backdrop-blur-xl border border-gold-primary/20 rounded-br-2xl overflow-hidden shadow-[0_0_25px_rgba(0,0,0,0.5)]"
       >
+        {/* Brushed Gold Border Animation on Expand */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              exit={{ scaleX: 0, opacity: 0 }}
+              className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold-light to-transparent origin-left z-10"
+            />
+          )}
+        </AnimatePresence>
+
         <div className="flex items-center h-10 px-2.5">
           <button
             onClick={toggleExpand}

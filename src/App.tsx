@@ -13,6 +13,8 @@ import {
   Heart,
   Gift,
   Share2,
+  Volume2,
+  VolumeX,
   Eye,
   EyeOff,
   Clock,
@@ -375,7 +377,7 @@ export default function App() {
               onClick={(e) => { e.stopPropagation(); setIsGlobalMuted(!isGlobalMuted); }}
               className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_10px_rgba(212,175,55,0.2)]"
             >
-              {isGlobalMuted ? <EyeOff size={16} /> : <Eye size={16} />}
+              {isGlobalMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }}

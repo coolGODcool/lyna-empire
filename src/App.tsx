@@ -131,7 +131,7 @@ export default function App() {
       name: "黑金流光威士忌吧", 
       description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
       image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v3.mp4",
+      video: "/assets/videos/v1.mp4",
       category: "夜生活",
       rating: 9.5,
       distance: "2.5 KM",
@@ -145,7 +145,7 @@ export default function App() {
       name: "帝國極限體能館", 
       description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
       image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v4.mp4",
+      video: "/assets/videos/v2.mp4",
       category: "運動健身",
       rating: 9.2,
       distance: "3.0 KM",
@@ -159,7 +159,7 @@ export default function App() {
       name: "LN-001 專屬訂製西服", 
       description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
       image: "https://images.unsplash.com/photo-1594932224828-b4b057b7d6ee?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v5.mp4",
+      video: "/assets/videos/v1.mp4",
       category: "精品服飾",
       rating: 10.0,
       distance: "1.2 KM",
@@ -386,9 +386,15 @@ export default function App() {
                     {/* Info Tags - Bottom Left */}
                     <div className="absolute bottom-32 left-6 right-24 space-y-3 pointer-events-none">
                       <div className="flex flex-wrap gap-2 items-center">
-                        <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + ' 鳳山')}`);
+                          }}
+                          className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full pointer-events-auto cursor-pointer hover:bg-gold-primary/40 transition-all"
+                        >
                           <MapPin size={10} className="text-gold-primary" />
-                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">📍 距離 1.2 KM · 步行約 15 分鐘</span>
+                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">📍 距離 1.2 KM (點擊導航)</span>
                         </div>
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full">
                           <Navigation size={10} className="text-white/60" />

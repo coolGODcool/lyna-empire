@@ -364,10 +364,10 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="snap-container h-screen overflow-y-scroll snap-y snap-mandatory w-full"
+              className="snap-container h-dvh overflow-y-scroll overflow-x-hidden snap-y snap-mandatory w-full bg-black"
             >
               {loading ? (
-                <div className="h-full flex items-center justify-center">
+                <div className="h-dvh flex items-center justify-center">
                   <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
@@ -375,7 +375,7 @@ export default function App() {
                   <div 
                     key={store.id} 
                     data-id={store.id}
-                    className="snap-item relative h-screen w-full snap-start"
+                    className="snap-item relative h-dvh w-full snap-start overflow-hidden"
                     onMouseDown={(e) => handleInteractionStart(e, store)}
                     onMouseUp={handleInteractionEnd}
                     onTouchStart={(e) => handleInteractionStart(e, store)}
@@ -422,6 +422,24 @@ export default function App() {
                       <p className="text-xs text-gray-300 line-clamp-2 drop-shadow-md font-medium">
                         {store.description}
                       </p>
+
+                      {/* 預約與加一份按鈕 - 恢復 UI */}
+                      <div className="flex gap-3 pt-2">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setShowOrderPanel(true); }}
+                          className="flex-1 py-3 bg-black/60 backdrop-blur-md border border-gold-primary/50 rounded-xl flex items-center justify-center gap-2 group hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_4px_15px_rgba(0,0,0,0.3)]"
+                        >
+                          <Utensils size={16} className="text-gold-primary group-hover:scale-110 transition-transform" />
+                          <span className="text-xs font-black text-gold-primary uppercase tracking-widest">立即預約</span>
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setShowOrderPanel(true); }}
+                          className="px-5 py-3 bg-gold-primary text-black rounded-xl flex items-center justify-center gap-2 hover:bg-gold-light transition-all active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                        >
+                          <Plus size={16} strokeWidth={3} />
+                          <span className="text-xs font-black uppercase tracking-widest">加一份</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Right Sidebar Interaction Chain */}

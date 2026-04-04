@@ -246,8 +246,45 @@ export default function App() {
     touchStartPos.current = { x, y };
     setSelectedStore(store);
 
+    // 如果計時器尚未啟動，這可能是連續點擊的第一下
+    if (!clickTimer.current) {
+      clickCount.current = 0;
+      clickTimer.current = setTimeout(() => {
+        const screenWidth = window.innerWidth;
+        const isInCenter = touchStartPos.current.x >= screenWidth * 0.2 && touchStartPos.current.x <= screenWidth * 0.8;
+
+        if (isInCenter) {
+          if (clickCount.current === 1) {
+            setIsPaused(prev => !prev);
+          } else if (clickCount.current === 2) {
+            if (isLiked) {
+              setLikes(prev => prev - 1);
+              setIsLiked(false);
+              setShowFountain(false);
+            } else {
+              setLikes(prev => prev + 1);
+              setIsLiked(true);
+              setShowFountain(true);
+              setTimeout(() => setShowFountain(false), 1000);
+            }
+          } else if (clickCount.current >= 3) {
+            setShowBounty(true);
+          }
+        }
+        clickCount.current = 0;
+        clickTimer.current = null;
+      }, 250);
+    }
+
+    clickCount.current += 1;
+
     longPressTimer.current = setTimeout(() => {
       setLongPressActive(true);
+      // 長按時取消點擊計數
+      if (clickTimer.current) {
+        clearTimeout(clickTimer.current);
+        clickTimer.current = null;
+      }
       clickCount.current = 0;
     }, 600);
   };
@@ -261,10 +298,13 @@ export default function App() {
     const dx = Math.abs(x - touchStartPos.current.x);
     const dy = Math.abs(y - touchStartPos.current.y);
     
-    // If displacement > 10px, it's a scroll or swipe, not a click
+    // 如果位移過大，視為滑動而非點擊
     if (dx > 10 || dy > 10) {
+      if (clickTimer.current) {
+        clearTimeout(clickTimer.current);
+        clickTimer.current = null;
+      }
       clickCount.current = 0;
-      if (clickTimer.current) clearTimeout(clickTimer.current);
       setLongPressActive(false);
       return;
     }
@@ -273,38 +313,6 @@ export default function App() {
       setLongPressActive(false);
       return;
     }
-
-    clickCount.current += 1;
-    if (clickTimer.current) clearTimeout(clickTimer.current);
-
-    clickTimer.current = setTimeout(() => {
-      const screenWidth = window.innerWidth;
-      // 僅限水平中間 60% (20%vw - 80%vw)
-      const isInCenter = x >= screenWidth * 0.2 && x <= screenWidth * 0.8;
-
-      if (isInCenter) {
-        if (clickCount.current === 1) {
-          // 單擊：切換 播放/暫停
-          setIsPaused(prev => !prev);
-        } else if (clickCount.current === 2) {
-          // 雙擊：噴射金心特效
-          if (isLiked) {
-            setLikes(prev => prev - 1);
-            setIsLiked(false);
-            setShowFountain(false);
-          } else {
-            setLikes(prev => prev + 1);
-            setIsLiked(true);
-            setShowFountain(true);
-            setTimeout(() => setShowFountain(false), 1000);
-          }
-        } else if (clickCount.current >= 3) {
-          // 三擊：發布懸賞
-          setShowBounty(true);
-        }
-      }
-      clickCount.current = 0;
-    }, 250);
   };
 
   const handleOrderConfirm = (data: OrderData) => {
@@ -321,24 +329,24 @@ export default function App() {
 
   return (
     <div 
-      className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom"
+      className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom touch-manipulation select-none"
     >
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]">
-        {/* Search System - Top Left */}
-        <SearchSystem 
-          onExpandChange={setIsSearchExpanded}
-          onStoreSelect={(id) => {
-            const store = stores.find(s => s.id === id);
-            if (store) {
-              setSelectedStore(store);
-              setShowOrderPanel(true);
-            }
-          }}
-        />
-
         {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
-        <div className="mx-[-1.5rem] relative h-10 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] overflow-hidden z-[60]">
+        <div className="mx-[-1.5rem] relative h-8 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] overflow-hidden z-[60]">
+          {/* Search System - Integrated into the bar's left side */}
+          <SearchSystem 
+            onExpandChange={setIsSearchExpanded}
+            onStoreSelect={(id) => {
+              const store = stores.find(s => s.id === id);
+              if (store) {
+                setSelectedStore(store);
+                setShowOrderPanel(true);
+              }
+            }}
+          />
+
           {/* Liquid Gold Progress Fill - Based on Date Percentage */}
           <motion.div 
             initial={{ width: 0 }}
@@ -349,9 +357,9 @@ export default function App() {
           {/* Text Overlay - Large & Prestigious */}
           <div className={`absolute inset-0 flex items-center justify-center px-6 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
-              <Sparkles size={18} className="text-gold-light animate-pulse" />
-              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
-                本季結算倒數 {quarterlyProgress}% | 目前帝國累計公益金 ${(charityPool / 1000000).toFixed(2)}M
+              <Sparkles size={14} className="text-gold-light animate-pulse" />
+              <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
+                本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M
               </span>
             </div>
           </div>

@@ -30,6 +30,8 @@ export default function VideoPlayer({ src, poster, isActive }: VideoPlayerProps)
         loop
         muted
         playsInline
+        autoPlay
+        preload="auto"
         className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         onLoadedData={() => setIsLoaded(true)}
       />

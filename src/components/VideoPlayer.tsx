@@ -1,12 +1,14 @@
+// 影音播放器組件，支援自動播放、靜音循環與原生級滾動對齊。
 import React, { useRef, useEffect, useState } from "react";
 
 interface VideoPlayerProps {
   src: string;
   poster: string;
   isActive: boolean;
+  muted?: boolean;
 }
 
-export default function VideoPlayer({ src, poster, isActive }: VideoPlayerProps) {
+export default function VideoPlayer({ src, poster, isActive, muted = true }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -28,7 +30,7 @@ export default function VideoPlayer({ src, poster, isActive }: VideoPlayerProps)
         src={src}
         poster={poster}
         loop
-        muted
+        muted={muted}
         playsInline
         autoPlay
         preload="auto"

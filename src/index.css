@@ -1,3 +1,4 @@
+/* 全域樣式表，包含 Tailwind CSS 配置與自定義金色主題樣式。 */
 @import "tailwindcss";
 
 @theme {
@@ -12,6 +13,23 @@
   body {
     @apply bg-black-deep text-white antialiased overflow-hidden;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    /* 防止手機端點擊延遲 */
+    touch-action: manipulation;
+  }
+
+  /* 防止 iOS 自動縮放：字體必須至少 16px */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+@layer utilities {
+  /* 支援動態視窗高度 (dvh) */
+  .h-dvh {
+    height: 100dvh;
+  }
+  .min-h-dvh {
+    min-height: 100dvh;
   }
 }
 

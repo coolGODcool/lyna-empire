@@ -20,21 +20,20 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
 
   // Simulate dynamic market data
   useEffect(() => {
-    const baseRate = 0.15;
-    const increment = (amount - 30) * 0.005; // 調整預測邏輯
+    // 金額越高，預計接單人數的進度條越長
+    const baseRate = 0.05;
+    const increment = (amount / 500); // 500 L-Coin reaches near 100%
     const rate = Math.max(0.05, Math.min(0.99, baseRate + increment));
     setEstimatedAcceptance(rate);
-    setPotentialHunters(Math.floor(rate * 100));
+    setPotentialHunters(Math.floor(rate * 150)); // Max 150 hunters
   }, [amount]);
 
   const handleAdjust = (delta: number) => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setAmount(prev => Math.max(0, prev + delta));
-    }, 50);
+    setAmount(prev => Math.max(0, prev + delta));
   };
 
   const handleConfirm = async () => {
+    if (amount < 30) return;
     if (!isConfirming) {
       setIsConfirming(true);
       return;
@@ -53,7 +52,6 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
     if (isConfirming) {
       setIsConfirming(false);
     } else {
-      setAmount(0);
       onClose();
     }
   };
@@ -105,37 +103,56 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                     <div className="bg-black/40 p-6 rounded-3xl border border-gold-primary/20 text-center space-y-4">
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">當前懸賞金額</p>
                       
-                      <div className="flex items-center justify-center gap-4">
-                        <button 
-                          onClick={() => handleAdjust(-100)}
-                          className="p-2 rounded-full bg-white/5 text-gold-primary hover:bg-gold-primary/20 active:scale-90 transition-all"
-                        >
-                          <Minus size={24} />
-                        </button>
-                        
+                      <div className="flex flex-col items-center justify-center gap-6">
                         <div className="relative">
                           <input 
                             type="number"
                             value={amount}
                             onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                            className="w-32 bg-transparent text-5xl font-black font-mono text-white text-center focus:outline-none tracking-tighter"
+                            className="w-40 bg-transparent text-5xl font-black font-mono text-white text-center focus:outline-none tracking-tighter"
                           />
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-black text-gold-primary/60 uppercase">L-Coin</div>
                         </div>
 
-                        <button 
-                          onClick={() => handleAdjust(100)}
-                          className="p-2 rounded-full bg-white/5 text-gold-primary hover:bg-gold-primary/20 active:scale-90 transition-all"
-                        >
-                          <Plus size={24} />
-                        </button>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          <button 
+                            onClick={() => handleAdjust(-10)}
+                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
+                          >
+                            -10
+                          </button>
+                          <button 
+                            onClick={() => handleAdjust(-5)}
+                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
+                          >
+                            -5
+                          </button>
+                          <button 
+                            onClick={() => handleAdjust(5)}
+                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
+                          >
+                            +5
+                          </button>
+                          <button 
+                            onClick={() => handleAdjust(10)}
+                            className="px-3 py-2 rounded-xl bg-white/5 text-gold-primary border border-gold-primary/20 hover:bg-gold-primary/20 active:scale-90 transition-all text-xs font-bold"
+                          >
+                            +10
+                          </button>
+                          <button 
+                            onClick={() => handleAdjust(100)}
+                            className="px-3 py-2 rounded-xl bg-gold-primary/20 text-gold-primary border border-gold-primary/40 hover:bg-gold-primary/30 active:scale-90 transition-all text-xs font-bold"
+                          >
+                            +100
+                          </button>
+                        </div>
                       </div>
 
                       <button 
-                        onClick={() => setAmount(0)}
+                        onClick={() => setAmount(30)}
                         className="flex items-center gap-1 mx-auto text-[9px] font-black text-gray-500 hover:text-gold-primary transition-colors uppercase tracking-widest"
                       >
-                        <RotateCcw size={10} /> 重置金額
+                        <RotateCcw size={10} /> 重置金額 (30)
                       </button>
                     </div>
                   </div>
@@ -159,6 +176,9 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                           className={`h-full ${estimatedAcceptance > 0.8 ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.5)]'}`}
                         />
                       </div>
+                      {amount < 30 && (
+                        <p className="text-[9px] text-red-500 font-bold text-center animate-pulse">最低懸賞金額為 30 L-Coin</p>
+                      )}
                     </div>
                   </div>
                 </>
@@ -167,7 +187,7 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={handleConfirm}
-                  disabled={isLoading || (!isConfirming && amount <= 0)}
+                  disabled={isLoading || (!isConfirming && amount < 30)}
                   className={`w-full py-5 ${isConfirming ? 'bg-gold-primary shadow-[0_0_30px_rgba(212,175,55,0.4)]' : 'bg-white/10 border border-gold-primary/40'} text-black font-black text-lg uppercase tracking-[0.3em] rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale`}
                 >
                   {isLoading ? (

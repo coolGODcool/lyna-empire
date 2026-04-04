@@ -30,6 +30,9 @@ import OrderDrawer, { OrderData } from "./components/OrderDrawer";
 import BountyPanel from "./components/BountyPanel";
 import LevelUpAnimation from "./components/LevelUpAnimation";
 import VideoPlayer from "./components/VideoPlayer";
+import SupportPanel from "./components/SupportPanel";
+import CommentPanel from "./components/CommentPanel";
+import { Calendar, MapPin, Navigation } from "lucide-react";
 
 // RPG 公告欄美學重建 - Navbar 精緻化
 function LynaLIcon({ active }: { active: boolean }) {
@@ -100,10 +103,10 @@ export default function App() {
       name: "萊娜精品咖啡 (旗艦店)", 
       description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
       image: "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/coffee.webm",
+      video: "/assets/videos/v1.mp4",
       category: "精品餐飲",
       rating: 9.9,
-      distance: "0.8KM",
+      distance: "0.8 KM",
       sales: "2.5K",
       queueTime: "10min",
       tags: ["#高雄", "#鼓山區", "#精品餐飲", "#評價: 9.9"],
@@ -114,10 +117,10 @@ export default function App() {
       name: "五五六六和牛燒肉", 
       description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
       image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/wagyu.webm",
+      video: "/assets/videos/v2.mp4",
       category: "頂級美食",
       rating: 9.7,
-      distance: "1.2KM",
+      distance: "1.2 KM",
       sales: "1.2K",
       queueTime: "25min",
       tags: ["#高雄", "#前鎮區", "#和牛", "#評價: 9.7"],
@@ -128,10 +131,10 @@ export default function App() {
       name: "黑金流光威士忌吧", 
       description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
       image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/whisky.webm",
+      video: "/assets/videos/v3.mp4",
       category: "夜生活",
       rating: 9.5,
-      distance: "2.5KM",
+      distance: "2.5 KM",
       sales: "0.8K",
       queueTime: "5min",
       tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
@@ -142,10 +145,10 @@ export default function App() {
       name: "帝國極限體能館", 
       description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
       image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/gym.webm",
+      video: "/assets/videos/v4.mp4",
       category: "運動健身",
       rating: 9.2,
-      distance: "3.0KM",
+      distance: "3.0 KM",
       sales: "1.5K",
       queueTime: "15min",
       tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
@@ -156,10 +159,10 @@ export default function App() {
       name: "LN-001 專屬訂製西服", 
       description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
       image: "https://images.unsplash.com/photo-1594932224828-b4b057b7d6ee?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/suit.webm",
+      video: "/assets/videos/v5.mp4",
       category: "精品服飾",
       rating: 10.0,
-      distance: "全域配送",
+      distance: "1.2 KM",
       sales: "0.5K",
       queueTime: "預約制",
       tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
@@ -171,6 +174,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [showBounty, setShowBounty] = useState(false);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [showMarquee, setShowMarquee] = useState(true);
@@ -178,6 +183,7 @@ export default function App() {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [isShopRedirect, setIsShopRedirect] = useState(false);
   const [likes, setLikes] = useState(995); // Start near threshold
+  const [isLiked, setIsLiked] = useState(false);
   const [trustScore, setTrustScore] = useState(79); // Start near threshold
   const [balance, setBalance] = useState(24500);
   const [charityPool, setCharityPool] = useState(8200000); // 8.2M
@@ -256,9 +262,16 @@ export default function App() {
       if (clickCount.current === 1) {
         setShowOrderPanel(true);
       } else if (clickCount.current === 2) {
-        setLikes(prev => prev + 1);
-        setShowFountain(true);
-        setTimeout(() => setShowFountain(false), 1000);
+        if (isLiked) {
+          setLikes(prev => prev - 1);
+          setIsLiked(false);
+          setShowFountain(false);
+        } else {
+          setLikes(prev => prev + 1);
+          setIsLiked(true);
+          setShowFountain(true);
+          setTimeout(() => setShowFountain(false), 1000);
+        }
       } else if (clickCount.current >= 3) {
         setShowBounty(true);
       }
@@ -285,8 +298,23 @@ export default function App() {
   return (
     <div className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom">
       {/* CEO Header */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex flex-col gap-2 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
-        <div className="flex justify-between items-center">
+      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex flex-col gap-4 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
+        {/* Charity Pool - Top Center */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[200px] px-4 py-1">
+          <div className="flex justify-between items-center mb-0.5">
+            <span className="text-[7px] font-black gold-gradient-text uppercase tracking-widest">本季公益金 (1%)</span>
+            <span className="text-[7px] font-black font-mono text-white/60">${(charityPool / 1000000).toFixed(2)}M</span>
+          </div>
+          <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden border border-white/5">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${(charityPool / 10000000) * 100}%` }}
+              className="h-full bg-gold-primary shadow-[0_0_8px_rgba(212,175,55,0.6)] animate-pulse"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center mt-2">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-full gold-border-glow flex items-center justify-center bg-black-matte">
               <Crown className="text-gold-primary w-6 h-6" />
@@ -302,7 +330,7 @@ export default function App() {
               className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/20 px-3 py-1.5 rounded-full hover:bg-gold-primary/10 transition-colors"
             >
               <span className="text-[10px] font-bold gold-gradient-text">
-                {showBalance ? "L-Coin: $24,500" : "L-Coin: *****"}
+                {showBalance ? `L-Coin: $${balance.toLocaleString()}` : "L-Coin: *****"}
               </span>
               <div className="text-gold-primary/60">
                 {showBalance ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -311,7 +339,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Marquee Announcement */}
+        {/* Marquee Announcement - Ticker Style */}
         <AnimatePresence>
           {showMarquee && (
             <motion.div 
@@ -320,33 +348,25 @@ export default function App() {
               exit={{ height: 0, opacity: 0 }}
               className="relative flex items-center overflow-hidden"
             >
-              <div className="flex-1 bg-gold-primary/10 border-y border-gold-primary/20 py-1 overflow-hidden">
+              <div className="flex-1 bg-gold-primary/5 border-y border-gold-primary/10 py-1 overflow-hidden">
                 <div className="whitespace-nowrap animate-marquee flex gap-8">
-                  <span className="text-[10px] font-bold text-gold-light uppercase tracking-widest">
-                    🏛️ 國庫公告：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 新懸賞：領主 Z 發布了新任務，獎金 $5,000！ 💰 國庫資產已達 $8.2M，感謝全體子民貢獻！
+                  <span className="text-[9px] font-bold text-gold-light/60 uppercase tracking-widest">
+                    🏛️ 規費快訊：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
                   </span>
-                  <span className="text-[10px] font-bold text-gold-light uppercase tracking-widest">
-                    🏛️ 國庫公告：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 新懸賞：領主 Z 發布了新任務，獎金 $5,000！ 💰 國庫資產已達 $8.2M，感謝全體子民貢獻！
+                  <span className="text-[9px] font-bold text-gold-light/60 uppercase tracking-widest">
+                    🏛️ 規費快訊：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
                   </span>
                 </div>
               </div>
               <button 
                 onClick={() => setShowMarquee(false)}
-                className="absolute right-0 bg-black/60 p-1 text-gold-primary"
+                className="absolute right-0 bg-black/60 p-1 text-gold-primary/40"
               >
-                <X size={12} />
+                <X size={10} />
               </button>
             </motion.div>
           )}
         </AnimatePresence>
-        {!showMarquee && (
-          <button 
-            onClick={() => setShowMarquee(true)}
-            className="self-end text-[8px] font-bold text-gold-primary/40 uppercase tracking-widest"
-          >
-            開啟公告
-          </button>
-        )}
       </header>
 
       {/* Main Content Area */}
@@ -360,31 +380,6 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="snap-container"
             >
-              {/* Charity Pool Progress Bar */}
-              <div className="fixed top-28 left-6 right-6 z-40">
-                <div className="glass-card p-4 border-gold-primary/20 bg-black/40 backdrop-blur-md space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Heart size={14} className="text-gold-primary" />
-                      <span className="text-[10px] font-black gold-gradient-text uppercase tracking-widest">季末公益金累積進度 (1%)</span>
-                    </div>
-                    <span className="text-[10px] font-black font-mono text-white">${(charityPool / 1000000).toFixed(1)}M / $10M</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(charityPool / 10000000) * 100}%` }}
-                      className="h-full bg-gradient-to-r from-gold-dark to-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]"
-                    />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">僅限 TrustScore 80+ 子民參與治理投票</p>
-                    <button className="text-[8px] font-black text-gold-primary uppercase tracking-widest flex items-center gap-1">
-                      前往投票 <ChevronRight size={10} />
-                    </button>
-                  </div>
-                </div>
-              </div>
               {loading ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
@@ -408,16 +403,23 @@ export default function App() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
                     
                     {/* Info Tags - Bottom Left */}
-                    <div className="absolute bottom-32 left-6 right-20 space-y-3">
+                    <div className="absolute bottom-32 left-6 right-24 space-y-3">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
+                          <MapPin size={10} className="text-gold-primary" />
+                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">GPS: {store.distance}</span>
+                        </div>
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full">
+                          <Navigation size={10} className="text-white/60" />
+                          <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">抵達需 {parseInt(store.distance) * 8 || 12} 分鐘</span>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {store.tags.map((tag, idx) => (
                           <span key={idx} className="px-2 py-0.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-gold-light rounded-full">
                             {tag}
                           </span>
                         ))}
-                        <span className="px-2 py-0.5 bg-gold-primary text-black text-[9px] font-bold rounded-full">
-                          本月銷量: {store.sales}
-                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-2xl font-black text-white drop-shadow-lg italic tracking-tighter">{store.name}</h3>
@@ -429,18 +431,38 @@ export default function App() {
 
                     {/* Right Sidebar Interaction Chain */}
                     <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center">
-                      {/* Queue Monitor */}
+                      {/* Dynamic Clock/Calendar Logic */}
                       <div className="flex flex-col items-center gap-1 mb-2">
                         <div className="w-12 h-12 rounded-full bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 flex items-center justify-center text-gold-primary animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-                          <Clock size={20} />
+                          {store.serviceMode === 'reserve' ? <Calendar size={20} /> : <Clock size={20} />}
                         </div>
-                        <span className="text-[9px] font-black text-gold-primary drop-shadow-md">{store.queueTime}</span>
+                        <span className="text-[9px] font-black text-gold-primary drop-shadow-md">
+                          {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
+                        </span>
                       </div>
 
-                      <InteractionButton icon={<Heart size={22} className={likes > 995 ? "text-red-500 fill-red-500" : ""} />} label={likes.toLocaleString()} />
-                      <InteractionButton icon={<Gift size={22} />} label="贊助" />
-                      <InteractionButton icon={<MessageSquare size={22} />} label="留言" />
-                      <InteractionButton icon={<Share2 size={22} />} label="分享" />
+                      <InteractionButton 
+                        icon={<Heart size={22} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
+                        label={likes.toLocaleString()} 
+                        onClick={() => {
+                          if (isLiked) {
+                            setLikes(prev => prev - 1);
+                            setIsLiked(false);
+                          } else {
+                            setLikes(prev => prev + 1);
+                            setIsLiked(true);
+                            setShowFountain(true);
+                            setTimeout(() => setShowFountain(false), 1000);
+                          }
+                        }}
+                      />
+                      <InteractionButton icon={<Gift size={22} />} label="贊助" onClick={() => setShowSupport(true)} />
+                      <InteractionButton icon={<MessageSquare size={22} />} label="留言" onClick={() => setShowComments(true)} />
+                      <InteractionButton icon={<Share2 size={22} />} label="分享" onClick={() => {
+                        const referralCode = `LYNA-${userId}-${store.id}`;
+                        navigator.clipboard.writeText(`${window.location.origin}/?shopId=${store.id}&ref=${referralCode}`);
+                        alert(`推薦碼 ${referralCode} 已複製！連動 1% 導購分潤。`);
+                      }} />
                     </div>
 
                     {/* Gold Fountain Visual (Double Tap) */}
@@ -519,6 +541,24 @@ export default function App() {
         onClose={() => setShowOrderPanel(false)}
         storeName={selectedStore?.name || ""}
         onConfirm={handleOrderConfirm}
+      />
+
+      {/* Support Panel */}
+      <SupportPanel 
+        isOpen={showSupport}
+        onClose={() => setShowSupport(false)}
+        onConfirm={(amount) => {
+          setBalance(prev => prev - amount);
+          setCharityPool(prev => prev + amount * 0.01);
+          // Trigger visual feedback
+        }}
+      />
+
+      {/* Comment Panel */}
+      <CommentPanel 
+        isOpen={showComments}
+        onClose={() => setShowComments(false)}
+        storeName={selectedStore?.name || ""}
       />
 
       {/* Bounty Panel (Triple Tap) */}
@@ -634,10 +674,13 @@ function NavIcon({ icon, active, onClick }: { icon: React.ReactNode, active: boo
   );
 }
 
-function InteractionButton({ icon, label }: { icon: React.ReactNode, label: string }) {
+function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: () => void }) {
   return (
     <div className="flex flex-col items-center gap-1 group">
-      <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:gold-flow-bg group-hover:text-black transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.05)]">
+      <div 
+        onClick={onClick}
+        className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:gold-flow-bg group-hover:text-black transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.05)]"
+      >
         {icon}
       </div>
       <span className="text-[10px] font-bold text-white drop-shadow-md opacity-80 group-hover:opacity-100">{label}</span>

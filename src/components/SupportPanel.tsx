@@ -50,32 +50,35 @@ export default function SupportPanel({ isOpen, onClose, onConfirm }: SupportPane
 
               <div className="grid grid-cols-2 gap-2">
                 <button 
-                  onClick={() => setAmount(prev => prev + 5)}
-                  className="py-2 bg-gold-primary/10 border border-gold-primary/30 rounded-xl text-gold-primary text-[10px] font-black hover:bg-gold-primary/20 transition-all"
+                  onClick={() => setAmount(5)}
+                  className={`py-2 rounded-xl text-[10px] font-black transition-all ${amount === 5 ? 'bg-gold-primary text-black' : 'bg-gold-primary/10 border border-gold-primary/30 text-gold-primary hover:bg-gold-primary/20'}`}
                 >
-                  +5 L
+                  5 L
                 </button>
                 <button 
-                  onClick={() => setAmount(prev => prev + 10)}
-                  className="py-2 bg-gold-primary/10 border border-gold-primary/30 rounded-xl text-gold-primary text-[10px] font-black hover:bg-gold-primary/20 transition-all"
+                  onClick={() => setAmount(10)}
+                  className={`py-2 rounded-xl text-[10px] font-black transition-all ${amount === 10 ? 'bg-gold-primary text-black' : 'bg-gold-primary/10 border border-gold-primary/30 text-gold-primary hover:bg-gold-primary/20'}`}
                 >
-                  +10 L
+                  10 L
                 </button>
               </div>
 
               <div className="flex items-center justify-between bg-white/5 p-1 rounded-full border border-white/10">
                 <button 
                   onClick={() => setAmount(Math.max(1, amount - 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-gold-primary hover:bg-white/5"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-gold-primary hover:bg-white/10 active:scale-90 transition-all"
                 >
-                  <Minus size={14} />
+                  <Minus size={16} />
                 </button>
-                <span className="text-xs font-black text-white font-mono">微調</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">微調</span>
+                  <span className="text-xs font-black text-white font-mono">± 1 L</span>
+                </div>
                 <button 
                   onClick={() => setAmount(amount + 1)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-gold-primary hover:bg-white/5"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-gold-primary hover:bg-white/10 active:scale-90 transition-all"
                 >
-                  <Plus size={14} />
+                  <Plus size={16} />
                 </button>
               </div>
 

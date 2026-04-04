@@ -198,6 +198,7 @@ export default function App() {
   const [isUserMuted, setIsUserMuted] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<'play' | 'pause' | null>(null);
 
   // 任務二：頂部「公益金季度百分比」算法 (Quarterly Progress Logic)
   const getQuarterlyProgress = () => {
@@ -241,6 +242,7 @@ export default function App() {
   }, [stores, activeTab]);
 
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, store: Store) => {
+    e.stopPropagation();
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     touchStartPos.current = { x, y };
@@ -255,7 +257,12 @@ export default function App() {
 
         if (isInCenter) {
           if (clickCount.current === 1) {
-            setIsPaused(prev => !prev);
+            setIsPaused(prev => {
+              const next = !prev;
+              setFeedbackType(next ? 'pause' : 'play');
+              setTimeout(() => setFeedbackType(null), 500);
+              return next;
+            });
           } else if (clickCount.current === 2) {
             if (isLiked) {
               setLikes(prev => prev - 1);
@@ -273,7 +280,7 @@ export default function App() {
         }
         clickCount.current = 0;
         clickTimer.current = null;
-      }, 250);
+      }, 300); // 將判定連擊的 timeout 從 250ms 放寬到 300ms
     }
 
     clickCount.current += 1;
@@ -290,6 +297,7 @@ export default function App() {
   };
 
   const handleInteractionEnd = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     
     const x = 'changedTouches' in e ? e.changedTouches[0].clientX : (e as React.MouseEvent).clientX;
@@ -332,7 +340,7 @@ export default function App() {
       className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom touch-manipulation select-none"
     >
       {/* CEO Header */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px]">
+      <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px] pointer-events-auto">
         {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
         <div className="mx-[-1.5rem] relative h-8 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] overflow-hidden z-[60]">
           {/* Search System - Integrated into the bar's left side */}
@@ -451,7 +459,7 @@ export default function App() {
                   <div 
                     key={store.id} 
                     data-id={store.id}
-                    className="snap-item relative h-dvh w-full snap-start overflow-hidden"
+                    className="snap-item relative h-dvh w-full snap-start overflow-hidden pointer-events-auto"
                     onMouseDown={(e) => handleInteractionStart(e, store)}
                     onMouseUp={handleInteractionEnd}
                     onTouchStart={(e) => handleInteractionStart(e, store)}
@@ -463,6 +471,7 @@ export default function App() {
                       isActive={activeVideoId === store.id} 
                       isPaused={isPaused && activeVideoId === store.id}
                       muted={isUserMuted}
+                      feedbackType={activeVideoId === store.id ? feedbackType : null}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
                     

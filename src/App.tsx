@@ -194,62 +194,38 @@ export default function App() {
   const clickCount = useRef(0);
   const clickTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPos = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Intersection Observer for Video Autoplay
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveVideoId(entry.target.getAttribute("data-id"));
-          }
-        });
-      },
-      { threshold: 0.7 }
-    );
-
-    const items = document.querySelectorAll(".snap-item");
-    items.forEach((item) => observer.observe(item));
-
-    return () => observer.disconnect();
-  }, [stores, activeTab]);
-
-  // Level Up Check
-  useEffect(() => {
-    if (likes >= 1000 && trustScore >= 80 && !showLevelUp) {
-      setShowLevelUp(true);
-    }
-  }, [likes, trustScore]);
-
-  // URL shopId 穿透邏輯
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const shopId = params.get('shopId');
-    if (shopId) {
-      // 模擬加載對應店家的菜單
-      // 在此範例中，我們假設 shopId 對應到 stores 中的某個 ID，或者直接彈出通用菜單
-      const store = stores.find(s => s.id === shopId) || stores[0];
-      setSelectedStore(store);
-      setIsShopRedirect(true);
-      
-      // 延遲彈出，確保加載感
-      setTimeout(() => {
-        setShowOrderPanel(true);
-      }, 1500);
-    }
-  }, []);
-
-  const handleInteractionStart = (store: Store) => {
+  const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, store: Store) => {
+    const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    touchStartPos.current = { x, y };
     setSelectedStore(store);
+
     longPressTimer.current = setTimeout(() => {
       setLongPressActive(true);
       clickCount.current = 0;
     }, 600);
   };
 
-  const handleInteractionEnd = () => {
+  const handleInteractionEnd = (e: React.MouseEvent | React.TouchEvent) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    
+    const x = 'changedTouches' in e ? e.changedTouches[0].clientX : (e as React.MouseEvent).clientX;
+    const y = 'changedTouches' in e ? e.changedTouches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    const dx = Math.abs(x - touchStartPos.current.x);
+    const dy = Math.abs(y - touchStartPos.current.y);
+    
+    // If displacement > 10px, it's a scroll or swipe, not a click
+    if (dx > 10 || dy > 10) {
+      clickCount.current = 0;
+      if (clickTimer.current) clearTimeout(clickTimer.current);
+      setLongPressActive(false);
+      return;
+    }
+
     if (longPressActive) {
       setLongPressActive(false);
       return;
@@ -298,48 +274,26 @@ export default function App() {
   return (
     <div className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom">
       {/* CEO Header */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 py-4 flex flex-col gap-4 bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
+      <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-4 flex flex-col gap-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm">
         {/* Charity Pool - Top Center */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[200px] px-4 py-1">
-          <div className="flex justify-between items-center mb-0.5">
-            <span className="text-[7px] font-black gold-gradient-text uppercase tracking-widest">本季公益金 (1%)</span>
-            <span className="text-[7px] font-black font-mono text-white/60">${(charityPool / 1000000).toFixed(2)}M</span>
+        <div className="w-full max-w-[240px] mx-auto px-4 py-1.5 bg-black/40 rounded-b-2xl border-x border-b border-gold-primary/20 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+          <div className="flex justify-between items-center mb-1">
+            <div className="flex items-center gap-1">
+              <Sparkles size={8} className="text-gold-primary animate-pulse" />
+              <span className="text-[7px] font-black gold-gradient-text uppercase tracking-widest">本季公益金累積 (1%)</span>
+            </div>
+            <span className="text-[7px] font-black font-mono text-white/80">${(charityPool / 1000000).toFixed(2)}M</span>
           </div>
-          <div className="w-full h-[2px] bg-white/5 rounded-full overflow-hidden border border-white/5">
+          <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden border border-white/5">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${(charityPool / 10000000) * 100}%` }}
-              className="h-full bg-gold-primary shadow-[0_0_8px_rgba(212,175,55,0.6)] animate-pulse"
+              className="h-full bg-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.8)]"
             />
           </div>
         </div>
 
-        <div className="flex justify-between items-center mt-2">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full gold-border-glow flex items-center justify-center bg-black-matte">
-              <Crown className="text-gold-primary w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-sm font-black gold-gradient-text tracking-tighter">萊娜帝國 LYNA EMPIRE</h1>
-              <p className="text-[10px] text-gold-primary/80 font-bold uppercase tracking-widest">執行長 5566 | 1.05 補貼中</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowBalance(!showBalance)}
-              className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/20 px-3 py-1.5 rounded-full hover:bg-gold-primary/10 transition-colors"
-            >
-              <span className="text-[10px] font-bold gold-gradient-text">
-                {showBalance ? `L-Coin: $${balance.toLocaleString()}` : "L-Coin: *****"}
-              </span>
-              <div className="text-gold-primary/60">
-                {showBalance ? <Eye size={12} /> : <EyeOff size={12} />}
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Marquee Announcement - Ticker Style */}
+        {/* Marquee Announcement - Ticker Style (Now below Charity Pool) */}
         <AnimatePresence>
           {showMarquee && (
             <motion.div 
@@ -348,7 +302,7 @@ export default function App() {
               exit={{ height: 0, opacity: 0 }}
               className="relative flex items-center overflow-hidden"
             >
-              <div className="flex-1 bg-gold-primary/5 border-y border-gold-primary/10 py-1 overflow-hidden">
+              <div className="flex-1 bg-gold-primary/5 border-y border-gold-primary/10 py-1.5 overflow-hidden">
                 <div className="whitespace-nowrap animate-marquee flex gap-8">
                   <span className="text-[9px] font-bold text-gold-light/60 uppercase tracking-widest">
                     🏛️ 規費快訊：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
@@ -359,14 +313,41 @@ export default function App() {
                 </div>
               </div>
               <button 
-                onClick={() => setShowMarquee(false)}
-                className="absolute right-0 bg-black/60 p-1 text-gold-primary/40"
+                onClick={(e) => { e.stopPropagation(); setShowMarquee(false); }}
+                className="absolute right-0 bg-black/80 p-1.5 text-gold-primary/40 hover:text-gold-primary transition-colors"
               >
                 <X size={10} />
               </button>
             </motion.div>
           )}
         </AnimatePresence>
+
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full gold-border-glow flex items-center justify-center bg-black-matte shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+              <Crown className="text-gold-primary w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-sm font-black gold-gradient-text tracking-tighter">萊娜帝國 LYNA EMPIRE</h1>
+              <p className="text-[10px] text-gold-primary/80 font-bold uppercase tracking-widest flex items-center gap-1">
+                執行長 5566 <span className="w-1 h-1 rounded-full bg-gold-primary" /> 1.05 補貼中
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }}
+              className="flex items-center gap-2 bg-black/60 backdrop-blur-md border border-gold-primary/30 px-3 py-1.5 rounded-full hover:bg-gold-primary/20 transition-all active:scale-95"
+            >
+              <span className="text-[10px] font-bold gold-gradient-text">
+                {showBalance ? `L-Coin: $${balance.toLocaleString()}` : "L-Coin: *****"}
+              </span>
+              <div className="text-gold-primary/60">
+                {showBalance ? <Eye size={12} /> : <EyeOff size={12} />}
+              </div>
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Main Content Area */}
@@ -378,7 +359,7 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="snap-container"
+              className="snap-container h-screen overflow-y-scroll snap-y snap-mandatory w-full"
             >
               {loading ? (
                 <div className="h-full flex items-center justify-center">
@@ -389,10 +370,10 @@ export default function App() {
                   <div 
                     key={store.id} 
                     data-id={store.id}
-                    className="snap-item relative h-full"
-                    onMouseDown={() => handleInteractionStart(store)}
+                    className="snap-item relative h-screen w-full snap-start"
+                    onMouseDown={(e) => handleInteractionStart(e, store)}
                     onMouseUp={handleInteractionEnd}
-                    onTouchStart={() => handleInteractionStart(store)}
+                    onTouchStart={(e) => handleInteractionStart(e, store)}
                     onTouchEnd={handleInteractionEnd}
                   >
                     <VideoPlayer 
@@ -400,14 +381,14 @@ export default function App() {
                       poster={store.image} 
                       isActive={activeVideoId === store.id} 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
                     
                     {/* Info Tags - Bottom Left */}
-                    <div className="absolute bottom-32 left-6 right-24 space-y-3">
+                    <div className="absolute bottom-32 left-6 right-24 space-y-3 pointer-events-none">
                       <div className="flex flex-wrap gap-2 items-center">
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
                           <MapPin size={10} className="text-gold-primary" />
-                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">GPS: {store.distance}</span>
+                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">📍 距離 1.2 KM · 步行約 15 分鐘</span>
                         </div>
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full">
                           <Navigation size={10} className="text-white/60" />
@@ -430,9 +411,12 @@ export default function App() {
                     </div>
 
                     {/* Right Sidebar Interaction Chain */}
-                    <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center">
+                    <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20">
                       {/* Dynamic Clock/Calendar Logic */}
-                      <div className="flex flex-col items-center gap-1 mb-2">
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex flex-col items-center gap-1 mb-2"
+                      >
                         <div className="w-12 h-12 rounded-full bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 flex items-center justify-center text-gold-primary animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]">
                           {store.serviceMode === 'reserve' ? <Calendar size={20} /> : <Clock size={20} />}
                         </div>
@@ -674,11 +658,14 @@ function NavIcon({ icon, active, onClick }: { icon: React.ReactNode, active: boo
   );
 }
 
-function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: () => void }) {
+function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: (e: React.MouseEvent) => void }) {
   return (
     <div className="flex flex-col items-center gap-1 group">
       <div 
-        onClick={onClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.(e);
+        }}
         className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:gold-flow-bg group-hover:text-black transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.05)]"
       >
         {icon}

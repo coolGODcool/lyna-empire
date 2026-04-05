@@ -226,12 +226,18 @@ export default function App() {
   const resetStealthTimer = (forceVisible = true) => {
     if (forceVisible) setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
-    stealthTimerRef.current = setTimeout(() => {
-      // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
-      if (!isPaused && !isSearchExpanded) {
-        setIsUiVisible(false);
-      }
-    }, 5000);
+    
+    // 只有在首頁影片區才啟動自動隱身
+    if (activeTab === "home") {
+      stealthTimerRef.current = setTimeout(() => {
+        // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
+        if (!isPaused && !isSearchExpanded) {
+          setIsUiVisible(false);
+        }
+      }, 5000);
+    } else {
+      setIsUiVisible(true);
+    }
   };
 
   useEffect(() => {
@@ -239,7 +245,7 @@ export default function App() {
     return () => {
       if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     };
-  }, [isPaused, isSearchExpanded]);
+  }, [isPaused, isSearchExpanded, activeTab]);
 
   const updateWeights = (tags: string[]) => {
     setInterestWeights(prev => {
@@ -464,8 +470,8 @@ export default function App() {
       className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom touch-manipulation select-none"
     >
       {/* CEO Header */}
-      <header className={`fixed top-0 left-0 w-full z-50 flex flex-col pointer-events-auto transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        {/* Top Marquee - Pure Text Style, No Background */}
+      <header className="fixed top-0 left-0 w-full z-50 flex flex-col pointer-events-auto">
+        {/* Top Marquee - Pure Text Style, No Background - Always Visible */}
         <div className="w-full h-6 flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px]">
           <div className="whitespace-nowrap animate-marquee flex gap-12">
             <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
@@ -477,59 +483,68 @@ export default function App() {
           </div>
         </div>
 
-        {/* Navigation Row */}
-        <div className="flex items-center justify-between px-6 py-2 gap-4">
-          <div className="flex items-center gap-4 flex-1 min-w-0">
-            {/* Minimalist Menu Button - Only One */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); }}
-              className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+        {/* Navigation Row - Only visible in Home tab and when UI is visible */}
+        <AnimatePresence>
+          {activeTab === "home" && isUiVisible && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center justify-between px-6 py-2 gap-4"
             >
-              <Menu size={22} strokeWidth={1.2} />
-            </button>
-            
-            {/* Search System - Integrated next to menu with flex-1 to occupy space */}
-            <div className="flex-1 min-w-0">
-              <SearchSystem 
-                onExpandChange={(expanded) => {
-                  setIsSearchExpanded(expanded);
-                  if (expanded) resetStealthTimer(true);
-                }}
-                onStoreSelect={(id) => {
-                  const store = stores.find(s => s.id === id);
-                  if (store) {
-                    setSelectedStore(store);
-                    setShowOrderPanel(true);
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                {/* Minimalist Menu Button - Only One */}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); }}
+                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                >
+                  <Menu size={22} strokeWidth={1.2} />
+                </button>
+                
+                {/* Search System - Integrated next to menu with flex-1 to occupy space */}
+                <div className="flex-1 min-w-0">
+                  <SearchSystem 
+                    onExpandChange={(expanded) => {
+                      setIsSearchExpanded(expanded);
+                      if (expanded) resetStealthTimer(true);
+                    }}
+                    onStoreSelect={(id) => {
+                      const store = stores.find(s => s.id === id);
+                      if (store) {
+                        setSelectedStore(store);
+                        setShowOrderPanel(true);
+                        resetStealthTimer(true);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-6 flex-shrink-0 ml-4">
+                {/* Right Control Area: [Pause/Play] [Volume] */}
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
                     resetStealthTimer(true);
-                  }
-                }}
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-6 flex-shrink-0 ml-4">
-            {/* Right Control Area: [Pause/Play] [Volume] */}
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                resetStealthTimer(true);
-                setIsPaused(!isPaused);
-                (window as any).isUserPaused = !isPaused;
-                setFeedbackType(!isPaused ? 'pause' : 'play');
-                setTimeout(() => setFeedbackType(null), 500);
-              }}
-              className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
-            >
-              {isPaused ? <Play size={22} strokeWidth={1.2} fill="currentColor" /> : <Pause size={22} strokeWidth={1.2} fill="currentColor" />}
-            </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); setIsUserMuted(!isUserMuted); }}
-              className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
-            >
-              {isUserMuted ? <VolumeX size={22} strokeWidth={1.2} /> : <Volume2 size={22} strokeWidth={1.2} />}
-            </button>
-          </div>
-        </div>
+                    setIsPaused(!isPaused);
+                    (window as any).isUserPaused = !isPaused;
+                    setFeedbackType(!isPaused ? 'pause' : 'play');
+                    setTimeout(() => setFeedbackType(null), 500);
+                  }}
+                  className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                >
+                  {isPaused ? <Play size={22} strokeWidth={1.2} fill="currentColor" /> : <Pause size={22} strokeWidth={1.2} fill="currentColor" />}
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); setIsUserMuted(!isUserMuted); }}
+                  className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                >
+                  {isUserMuted ? <VolumeX size={22} strokeWidth={1.2} /> : <Volume2 size={22} strokeWidth={1.2} />}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Main Content Area */}
@@ -628,7 +643,7 @@ export default function App() {
 
                     {/* Right Sidebar Interaction Chain */}
                     <div className={`absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      {/* Dynamic Clock/Calendar Logic */}
+                      {/* Dynamic Clock/Calendar Logic - Transparent Style */}
                       <div 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -636,12 +651,14 @@ export default function App() {
                           resetStealthTimer();
                           updateWeights(store.tags);
                         }}
-                        className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform"
+                        className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform group"
                       >
-                        <div className="w-10 h-10 rounded-full bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 flex items-center justify-center text-gold-primary animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-                          {store.serviceMode === 'reserve' ? <Calendar size={18} /> : <Clock size={18} />}
+                        <div className="w-12 h-12 flex items-center justify-center text-gold-primary transition-all">
+                          <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                            {store.serviceMode === 'reserve' ? <Calendar size={20} strokeWidth={1.5} /> : <Clock size={20} strokeWidth={1.5} />}
+                          </div>
                         </div>
-                        <span className="text-[8px] font-black text-gold-primary drop-shadow-md">
+                        <span className="text-[9px] font-black text-gold-primary drop-shadow-md opacity-90 group-hover:opacity-100">
                           {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
                         </span>
                       </div>
@@ -900,16 +917,30 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Navigation Bar - 去框化懸浮模式 */}
-      <nav className={`fixed bottom-0 left-0 w-full z-50 px-8 py-10 transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      {/* Navigation Bar - 去框化懸浮模式 - 絕對顯示 */}
+      <nav className="fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto">
         <div className="flex justify-between items-center w-full">
           <NavIcon 
-            icon={<LynaLIcon active={activeTab === "home"} />} 
+            icon={
+              <img 
+                src="/images.png" 
+                alt="Home" 
+                className={`w-8 h-8 object-contain transition-all ${activeTab === "home" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/home/100/100"; }}
+              />
+            } 
             active={activeTab === "home"} 
             onClick={() => setActiveTab("home")} 
           />
           <NavIcon 
-            icon={<ButlerIcon active={activeTab === "butler"} />} 
+            icon={
+              <img 
+                src="/images.png" 
+                alt="Butler" 
+                className={`w-8 h-8 object-contain transition-all ${activeTab === "butler" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/butler/100/100"; }}
+              />
+            } 
             active={activeTab === "butler"} 
             onClick={() => setActiveTab("butler")} 
           />
@@ -918,16 +949,35 @@ export default function App() {
               onClick={() => setActiveTab("plus")}
               className="w-16 h-16 flex items-center justify-center text-gold-primary drop-shadow-[0_0_20px_rgba(212,175,55,0.7)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
             >
-              <Plus size={36} strokeWidth={2} />
+              <img 
+                src="/images.png" 
+                alt="Plus" 
+                className="w-12 h-12 object-contain brightness-150" 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/plus/100/100"; }}
+              />
             </button>
           </div>
           <NavIcon 
-            icon={<QuestsIcon active={activeTab === "announcements"} />} 
+            icon={
+              <img 
+                src="/images.png" 
+                alt="Quests" 
+                className={`w-8 h-8 object-contain transition-all ${activeTab === "announcements" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/quests/100/100"; }}
+              />
+            } 
             active={activeTab === "announcements"} 
             onClick={() => setActiveTab("announcements")} 
           />
           <NavIcon 
-            icon={<LoungeIcon active={activeTab === "lounge"} />} 
+            icon={
+              <img 
+                src="/images.png" 
+                alt="Lounge" 
+                className={`w-8 h-8 object-contain transition-all ${activeTab === "lounge" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
+                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/lounge/100/100"; }}
+              />
+            } 
             active={activeTab === "lounge"} 
             onClick={() => setActiveTab("lounge")} 
           />

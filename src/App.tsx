@@ -263,17 +263,19 @@ export default function App() {
     if (forceVisible) setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     
-    // 只有在首頁影片區 (carouselIndex === 1) 才啟動自動隱身
-    if (activeTab === "home" && carouselIndex === 1) {
-      stealthTimerRef.current = setTimeout(() => {
-        // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
-        if (!isPaused && !isSearchExpanded) {
-          setIsUiVisible(false);
-        }
-      }, 5000);
-    } else {
+    // 非影片區強制顯示且不啟動計時器
+    if (activeTab !== "home" || carouselIndex !== 1) {
       setIsUiVisible(true);
+      return;
     }
+
+    // 只有在首頁影片區 (carouselIndex === 1) 才啟動自動隱身
+    stealthTimerRef.current = setTimeout(() => {
+      // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
+      if (!isPaused && !isSearchExpanded) {
+        setIsUiVisible(false);
+      }
+    }, 5000);
   };
 
   useEffect(() => {
@@ -308,9 +310,16 @@ export default function App() {
         updateWeights(currentStore.tags);
       }
     }, 8000);
-    setIsInfoExpanded(false); // Reset info expansion on video change
+    
+    // 當影片切換時，確保 selectedStore 同步更新且重置展開狀態
+    const currentStore = stores.find(s => s.id === activeVideoId);
+    if (currentStore) {
+      setSelectedStore(currentStore);
+    }
+    setIsInfoExpanded(false); 
+    
     return () => clearTimeout(timer);
-  }, [activeVideoId]);
+  }, [activeVideoId, stores]);
 
   // 根據權重排序商店
   const sortedStores = React.useMemo(() => {
@@ -638,6 +647,7 @@ export default function App() {
                         
                         {/* Info Tags - Bottom Left - 點擊展開邏輯 */}
                         <div 
+                          onMouseDown={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsInfoExpanded(!isInfoExpanded);
@@ -651,6 +661,7 @@ export default function App() {
                               <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
                             </div>
                             <div 
+                              onMouseDown={(e) => e.stopPropagation()}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (store.lat && store.lng) {
@@ -696,15 +707,17 @@ export default function App() {
                                 <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
                               </div>
                             </div>
-                            <p className="text-xs text-white/90 font-bold leading-relaxed drop-shadow-md">
-                              {store.description}
-                            </p>
-                            <div className="flex flex-wrap gap-1.5 pt-1">
-                              {store.tags.map((tag, idx) => (
-                                <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                                  {tag}
-                                </span>
-                              ))}
+                            <div className="space-y-2">
+                              <p className="text-xs text-white/90 font-bold leading-relaxed drop-shadow-md">
+                                {store.description}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {store.tags.map((tag, idx) => (
+                                  <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </motion.div>
                         </div>

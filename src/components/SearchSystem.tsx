@@ -62,12 +62,9 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
   };
 
   return (
-    <div className="absolute top-0 left-0 z-[110] flex items-center h-8 pl-3 pointer-events-auto gap-3">
-      {/* Menu & Search Icons - Floating on Progress Bar */}
+    <div className="relative z-[110] flex items-center h-8 pointer-events-auto gap-3">
+      {/* Search Icons - Floating on Progress Bar */}
       <div className="flex items-center gap-3 z-20">
-        <button className="text-gold-primary/80 hover:text-gold-light transition-all active:scale-90">
-          <Menu size={16} />
-        </button>
         <button
           onClick={toggleExpand}
           className="text-gold-primary/80 hover:text-gold-light hover:scale-110 active:scale-95 transition-all drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]"
@@ -106,6 +103,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                 onMouseLeave={handleVoiceEnd}
                 onTouchStart={handleVoiceStart}
                 onTouchEnd={handleVoiceEnd}
+                onClick={(e) => e.stopPropagation()} // 禁止單次點擊觸發
                 className={`p-2 rounded-full transition-all select-none touch-callout-none ${
                   isRecording ? "bg-red-500 text-white animate-pulse scale-125" : "text-gold-primary/70 hover:text-gold-primary"
                 }`}

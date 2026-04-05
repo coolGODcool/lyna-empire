@@ -48,7 +48,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
   };
 
   return (
-    <div className="absolute top-0 left-0 z-[110] flex items-center h-8 px-4 pointer-events-auto gap-3">
+    <div className="absolute top-0 left-0 z-[110] flex items-center h-8 pl-3 pointer-events-auto gap-3">
       {/* Menu & Search Icons - Floating on Progress Bar */}
       <div className="flex items-center gap-3 z-20">
         <button className="text-gold-primary/80 hover:text-gold-light transition-all active:scale-90">
@@ -67,10 +67,10 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
         {isExpanded && (
           <motion.div
             initial={{ width: 0, opacity: 0, x: -10 }}
-            animate={{ width: "65vw", opacity: 1, x: 0 }}
+            animate={{ width: "70vw", opacity: 1, x: 0 }}
             exit={{ width: 0, opacity: 0, x: -10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="absolute left-0 top-0 h-8 bg-black/40 backdrop-blur-3xl border-b border-gold-primary/20 rounded-r-full flex items-center pl-20 pr-4 overflow-hidden shadow-[20px_0_40px_rgba(0,0,0,0.6)]"
+            className="absolute left-0 top-0 h-8 bg-black/60 backdrop-blur-3xl border-b border-gold-primary/20 rounded-r-full flex items-center pl-20 pr-4 overflow-hidden shadow-[20px_0_40px_rgba(0,0,0,0.6)]"
           >
             <input
               autoFocus

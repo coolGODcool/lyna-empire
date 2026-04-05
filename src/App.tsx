@@ -232,6 +232,8 @@ export default function App() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [showMarquee, setShowMarquee] = useState(true);
+  const [fixNavbar, setFixNavbar] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [longPressActive, setLongPressActive] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(initialStores[0]);
   const [isShopRedirect, setIsShopRedirect] = useState(false);
@@ -502,17 +504,27 @@ export default function App() {
     >
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 flex flex-col pointer-events-auto">
-        {/* Top Marquee - Pure Text Style, No Background - Always Visible */}
-        <div className="w-full h-6 flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px]">
-          <div className="whitespace-nowrap animate-marquee flex gap-12">
-            <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-              本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
-            </span>
-            <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-              本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
-            </span>
-          </div>
-        </div>
+        {/* Top Marquee - Pure Text Style, No Background - Dynamic Height */}
+        <AnimatePresence initial={false}>
+          {showMarquee && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 24, opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: "spring", damping: 20, stiffness: 200 }}
+              className="w-full flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px]"
+            >
+              <div className="whitespace-nowrap animate-marquee flex gap-12">
+                <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                  本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
+                </span>
+                <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                  本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Navigation Row - Only visible in Home tab and when UI is visible */}
         <AnimatePresence>
@@ -526,7 +538,7 @@ export default function App() {
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 {/* Minimalist Menu Button - Only One */}
                 <button 
-                  onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); }}
+                  onClick={(e) => { e.stopPropagation(); setIsMenuOpen(true); resetStealthTimer(true); }}
                   className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
                 >
                   <Menu size={22} strokeWidth={1.2} />
@@ -624,36 +636,28 @@ export default function App() {
                           setIsInfoExpanded(!isInfoExpanded);
                           resetStealthTimer();
                         }}
-                        className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+                        className={`absolute bottom-32 left-6 right-24 space-y-1 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
                       >
-                        {/* Minimal View (Default) */}
-                        <div className="flex flex-wrap gap-2 items-center">
-                          <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
-                            <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
+                        {/* Minimal View (Default) - 名片化排版 */}
+                        <div className="space-y-1">
+                          {/* 首行：評價與距離 */}
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-gold-primary drop-shadow-md">⭐️ #評價: {store.rating}</span>
+                            <span className="text-white/30 text-[8px]">|</span>
+                            <span className="text-[10px] font-black text-gold-primary drop-shadow-md">📍 #距離: {store.distance}</span>
                           </div>
-                          <div 
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (store.lat && store.lng) {
-                                const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
-                                window.open(url, '_blank');
-                              }
-                            }}
-                            className={`flex items-center gap-1 px-2 py-0.5 backdrop-blur-md border rounded-full transition-all group ${
-                              (store.lat && store.lng) 
-                                ? "bg-gold-primary/30 border-gold-primary/50 cursor-pointer hover:bg-gold-primary/50 shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
-                                : "bg-white/10 border-white/10 cursor-default"
-                            }`}
-                          >
-                            <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${
-                              (store.lat && store.lng) ? "text-gold-light" : "text-white/40"
-                            }`}>
-                              {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
+                          
+                          {/* 次行：店名與身分 */}
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
+                            <span className="text-white/30 text-[8px]">|</span>
+                            <span className="text-[9px] text-gold-primary/80 font-bold uppercase tracking-widest drop-shadow-md">
+                              {store.type === 'merchant' ? "帝國領主" : "帝國子民"}
                             </span>
                           </div>
+
                           {!isInfoExpanded && (
-                            <div className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-2 animate-pulse">
+                            <div className="text-[8px] font-bold text-white/30 uppercase tracking-widest animate-pulse pt-1">
                               點擊展開詳情
                             </div>
                           )}
@@ -665,18 +669,15 @@ export default function App() {
                           animate={{ 
                             height: isInfoExpanded ? "auto" : 0,
                             opacity: isInfoExpanded ? 1 : 0,
-                            marginTop: isInfoExpanded ? 8 : 0
+                            marginTop: isInfoExpanded ? 4 : 0
                           }}
                           className="overflow-hidden space-y-2"
                         >
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full border border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+                          <div className="flex items-center gap-2 pt-2">
+                            <div className="w-8 h-8 rounded-full border border-gold-primary/30 overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.2)]">
                               <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
                             </div>
-                            <div>
-                              <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
-                              <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
-                            </div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">官方認證帳號</p>
                           </div>
                           <div className="space-y-2">
                             <p className="text-xs text-white/90 font-bold leading-relaxed drop-shadow-md">
@@ -875,6 +876,87 @@ export default function App() {
         commissionRate="0.6%"
       />
 
+      {/* CEO Menu Overlay */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-xl flex justify-start"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <motion.div 
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-72 h-full bg-black-matte border-r border-gold-primary/20 p-8 space-y-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-black gold-gradient-text italic tracking-tighter">帝國設定</h3>
+                <button onClick={() => setIsMenuOpen(false)} className="text-gold-primary/60 hover:text-gold-primary">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">介面自訂</p>
+                  
+                  {/* Toggle: Empire Marquee */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-bold text-white/80">顯示帝國跑馬燈</span>
+                    <button 
+                      onClick={() => setShowMarquee(!showMarquee)}
+                      className={`w-10 h-5 rounded-full transition-all relative ${showMarquee ? 'bg-gold-primary' : 'bg-white/10'}`}
+                    >
+                      <motion.div 
+                        animate={{ x: showMarquee ? 22 : 2 }}
+                        className="absolute top-1 w-3 h-3 rounded-full bg-white shadow-sm"
+                      />
+                    </button>
+                  </div>
+
+                  {/* Toggle: Fixed Navbar */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-bold text-white/80">固定顯示導航欄</span>
+                    <button 
+                      onClick={() => setFixNavbar(!fixNavbar)}
+                      className={`w-10 h-5 rounded-full transition-all relative ${fixNavbar ? 'bg-gold-primary' : 'bg-white/10'}`}
+                    >
+                      <motion.div 
+                        animate={{ x: fixNavbar ? 22 : 2 }}
+                        className="absolute top-1 w-3 h-3 rounded-full bg-white shadow-sm"
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">系統資訊</p>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-white/40">版本</span>
+                    <span className="text-gold-primary/60 font-mono">v1.2.4-PRO</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-white/40">領主編號</span>
+                    <span className="text-gold-primary/60 font-mono">{userId}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute bottom-10 left-8 right-8">
+                <button className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-gold-primary hover:border-gold-primary transition-all">
+                  登出帝國系統
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Plus Button Panel (Upload) */}
       <AnimatePresence>
         {activeTab === "plus" && (
@@ -926,7 +1008,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Navigation Bar - 去框化懸浮模式 - 絕對顯示 */}
-      <nav className="fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto">
+      <nav className={`fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto transition-all duration-700 ${(isUiVisible || fixNavbar) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
         <div className="flex justify-between items-center w-full">
           <NavIcon 
             icon={<LynaLIcon active={activeTab === "home"} />} 

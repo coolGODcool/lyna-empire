@@ -37,30 +37,6 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
     if (!nextState) setSearchQuery("");
   };
 
-  const handleVoiceStart = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (navigator.vibrate) navigator.vibrate([50]);
-    setIsRecording(true);
-    // 啟動語音辨識器邏輯 (模擬)
-    console.log("Voice recognition started...");
-  };
-
-  const handleVoiceEnd = (e: React.TouchEvent | React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isRecording) return;
-    
-    setIsRecording(false);
-    if (navigator.vibrate) navigator.vibrate([10]);
-    
-    // 獲取辨識結果並自動搜尋 (模擬)
-    const mockResults = ["萊娜精品咖啡", "五五六六和牛燒肉", "黑金流光威士忌吧"];
-    const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-    setSearchQuery(randomResult);
-    console.log("Voice recognition ended. Result:", randomResult);
-  };
-
   return (
     <div className="relative z-[110] flex items-center h-8 pointer-events-auto gap-3">
       {/* Search Icons - Floating on Progress Bar */}
@@ -87,23 +63,41 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
               autoFocus
               type="text"
               inputMode="search"
+              enterKeyHint="search"
               autoCorrect="off"
               autoComplete="off"
+              autoCapitalize="off"
               spellCheck="false"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  // 執行搜尋邏輯
+                  console.log("Searching for:", searchQuery);
+                  (e.target as HTMLInputElement).blur(); // 搜尋後收起鍵盤
+                }
+              }}
               placeholder={placeholders[placeholderIndex]}
               className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/30 focus:outline-none"
             />
             
             <div className="flex items-center gap-4">
               <button
-                onMouseDown={handleVoiceStart}
-                onMouseUp={handleVoiceEnd}
-                onMouseLeave={handleVoiceEnd}
-                onTouchStart={handleVoiceStart}
-                onTouchEnd={handleVoiceEnd}
-                onClick={(e) => e.stopPropagation()} // 禁止單次點擊觸發
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // 回歸穩定：單次點擊開啟辨識
+                  if (navigator.vibrate) navigator.vibrate([50]);
+                  setIsRecording(true);
+                  
+                  // 模擬辨識過程
+                  setTimeout(() => {
+                    setIsRecording(false);
+                    const mockResults = ["萊娜精品咖啡", "五五六六和牛燒肉", "黑金流光威士忌吧"];
+                    const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
+                    setSearchQuery(randomResult);
+                    if (navigator.vibrate) navigator.vibrate([10]);
+                  }, 2000);
+                }}
                 className={`p-2 rounded-full transition-all select-none touch-callout-none ${
                   isRecording ? "bg-red-500 text-white animate-pulse scale-125" : "text-gold-primary/70 hover:text-gold-primary"
                 }`}

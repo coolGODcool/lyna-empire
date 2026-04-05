@@ -199,6 +199,8 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [feedbackType, setFeedbackType] = useState<'play' | 'pause' | null>(null);
+  const [showDonationConfirm, setShowDonationConfirm] = useState(false);
+  const [pendingDonationAmount, setPendingDonationAmount] = useState(0);
 
   // 初始化全局鎖
   useEffect(() => {
@@ -267,14 +269,16 @@ export default function App() {
         const isInCenter = touchStartPos.current.x >= screenWidth * 0.2 && touchStartPos.current.x <= screenWidth * 0.8;
 
         if (isInCenter) {
-          if (clickCount.current === 1) {
+          const finalCount = clickCount.current;
+          if (finalCount === 1) {
             setIsPaused(prev => {
               const next = !prev;
+              (window as any).isUserPaused = next; // 同步鎖定
               setFeedbackType(next ? 'pause' : 'play');
               setTimeout(() => setFeedbackType(null), 500);
               return next;
             });
-          } else if (clickCount.current === 2) {
+          } else if (finalCount === 2) {
             if (isLiked) {
               setLikes(prev => prev - 1);
               setIsLiked(false);
@@ -285,13 +289,13 @@ export default function App() {
               setShowFountain(true);
               setTimeout(() => setShowFountain(false), 1000);
             }
-          } else if (clickCount.current >= 3) {
+          } else if (finalCount >= 3) {
             setShowBounty(true);
           }
         }
         clickCount.current = 0;
         clickTimer.current = null;
-      }, 300); // 將判定連擊的 timeout 從 250ms 放寬到 300ms
+      }, 350); // 放寬到 350ms，iOS 最穩定閾值
     }
 
     clickCount.current += 1;
@@ -377,7 +381,7 @@ export default function App() {
           <div className={`absolute inset-0 flex items-center justify-center px-6 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
               <Sparkles size={14} className="text-gold-light animate-pulse" />
-              <span className="text-[10px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
+              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
                 本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M
               </span>
             </div>
@@ -649,12 +653,74 @@ export default function App() {
         onClose={() => setShowSupport(false)}
         initialAmount={lastDonatedAmount}
         onConfirm={(amount) => {
-          setBalance(prev => prev - amount);
-          setCharityPool(prev => prev + amount * 0.01);
-          setLastDonatedAmount(amount);
-          // Trigger visual feedback
+          setPendingDonationAmount(amount);
+          setShowDonationConfirm(true);
+          setShowSupport(false);
         }}
       />
+
+      {/* Donation Double Confirmation Modal */}
+      <AnimatePresence>
+        {showDonationConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[600] flex items-center justify-center px-6 bg-black/60 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-sm bg-black-matte border border-gold-primary/30 rounded-[2rem] p-8 space-y-6 shadow-[0_0_50px_rgba(212,175,55,0.2)]"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 rounded-full bg-gold-primary/10 flex items-center justify-center mx-auto mb-4 border border-gold-primary/20">
+                  <ShieldCheck className="text-gold-primary w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-white italic tracking-tighter">金融安全二次確認</h3>
+                <p className="text-sm text-gray-400 font-bold">確定要為此影片贊助 <span className="text-gold-primary">{pendingDonationAmount} L-Coin</span> 嗎？</p>
+              </div>
+
+              <div className="bg-white/5 rounded-2xl p-4 space-y-2 border border-white/5">
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-gray-500">內含國庫規費 (8%)</span>
+                  <span className="text-gold-primary/60">{(pendingDonationAmount * 0.08).toFixed(1)} L</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-gray-500">公益金撥款 (1%)</span>
+                  <span className="text-gold-primary/60">{(pendingDonationAmount * 0.01).toFixed(1)} L</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                  <span className="text-gray-500">影片主分潤 (1%)</span>
+                  <span className="text-gold-primary/60">{(pendingDonationAmount * 0.01).toFixed(1)} L</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setShowDonationConfirm(false)}
+                  className="flex-1 py-4 rounded-xl bg-white/5 text-gray-400 font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => {
+                    setBalance(prev => prev - pendingDonationAmount);
+                    setCharityPool(prev => prev + pendingDonationAmount * 0.01);
+                    setLastDonatedAmount(pendingDonationAmount);
+                    setShowDonationConfirm(false);
+                    // Trigger success feedback
+                  }}
+                  className="flex-1 py-4 rounded-xl bg-gold-primary text-black font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(212,175,55,0.3)] active:scale-95 transition-all"
+                >
+                  確定贊助
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Comment Panel */}
       <CommentPanel 

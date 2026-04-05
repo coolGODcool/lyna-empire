@@ -223,8 +223,8 @@ export default function App() {
   const stealthTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoStartTimeRef = useRef<number>(Date.now());
 
-  const resetStealthTimer = () => {
-    setIsUiVisible(true);
+  const resetStealthTimer = (forceVisible = true) => {
+    if (forceVisible) setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     stealthTimerRef.current = setTimeout(() => {
       // 完善沉浸式隱身計時器：暫停時不准躲起來
@@ -327,7 +327,7 @@ export default function App() {
   }, [stores, activeTab]);
 
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, store: Store) => {
-    resetStealthTimer();
+    // 滑動不解除隱身：延遲判定，如果是點擊才 resetStealthTimer
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     touchStartPos.current = { x, y };
@@ -344,6 +344,7 @@ export default function App() {
           const finalCount = clickCount.current;
           // 帝國手勢指令集：1下暫停、2下系統預留、3下喜歡、4下懸賞
           if (finalCount === 1) {
+            resetStealthTimer(true); // 只有點擊中間暫停時才解除隱身
             setIsPaused(prev => {
               const next = !prev;
               (window as any).isUserPaused = next; // 同步鎖定
@@ -352,6 +353,7 @@ export default function App() {
               return next;
             });
           } else if (finalCount === 3) {
+            resetStealthTimer(true);
             // 3 下：喜歡 (Like - 噴金心)
             if (isLiked) {
               setLikes(prev => prev - 1);
@@ -394,6 +396,20 @@ export default function App() {
     const dx = x - touchStartPos.current.x;
     const dy = y - touchStartPos.current.y;
     
+    // 如果發生明顯位移（滑動），取消所有點擊計時器
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      if (clickTimer.current) {
+        clearTimeout(clickTimer.current);
+        clickTimer.current = null;
+      }
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      clickCount.current = 0;
+      setLongPressActive(false);
+    }
+
     // 左右滑動手勢導航
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
       if (dx > 50) {
@@ -446,91 +462,68 @@ export default function App() {
       className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom touch-manipulation select-none"
     >
       {/* CEO Header */}
-      <header className={`fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px] pointer-events-auto transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
-        <div className="mx-[-1.5rem] relative h-8 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-[60]">
-          {/* Search System - Integrated into the bar's left side */}
-          <SearchSystem 
-            onExpandChange={(expanded) => {
-              setIsSearchExpanded(expanded);
-              if (expanded) setIsUiVisible(true);
-            }}
-            onStoreSelect={(id) => {
-              const store = stores.find(s => s.id === id);
-              if (store) {
-                setSelectedStore(store);
-                setShowOrderPanel(true);
-              }
-            }}
-          />
-
-          {/* Liquid Gold Progress Fill - Based on Date Percentage */}
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${quarterlyProgress}%` }}
-            className="absolute top-0 left-0 h-full liquid-gold shadow-[0_0_20px_rgba(212,175,55,0.6)]"
-          />
-          
-          {/* Text Overlay - Scrolling Marquee (Full Width) */}
-          <div className={`absolute inset-0 flex items-center justify-center px-20 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
-            <div className="w-full overflow-hidden">
-              <div className="whitespace-nowrap animate-marquee flex gap-8">
-                <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)] leading-none">
-                  本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M | 領主 5566 補貼中 🏛️
-                </span>
-                <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)] leading-none">
-                  本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M | 領主 5566 補貼中 🏛️
-                </span>
-              </div>
-            </div>
+      <header className={`fixed top-0 left-0 w-full z-50 flex flex-col pointer-events-auto transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        {/* Top Marquee - Pure Text Style, No Background */}
+        <div className="w-full h-6 flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px]">
+          <div className="whitespace-nowrap animate-marquee flex gap-12">
+            <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+              本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
+            </span>
+            <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+              本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
+            </span>
           </div>
-          
-          {/* Halo Glow Effect */}
-          <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gold-primary/30 shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
         </div>
 
-        <div className="flex items-center h-10 px-6 relative">
-          {/* Scrolling Marquee - match_parent equivalent */}
-          <div className="absolute inset-0 flex items-center px-16 overflow-hidden pointer-events-none">
-            <div className="whitespace-nowrap animate-marquee flex gap-10">
-              <span className="text-[11px] font-black text-gold-primary/80 uppercase tracking-[0.2em] drop-shadow-sm">
-                🏛️ 規費快訊：領主 5566 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
-              </span>
-              <span className="text-[11px] font-black text-gold-primary/80 uppercase tracking-[0.2em] drop-shadow-sm">
-                🏛️ 規費快訊：領主 5566 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
-              </span>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center w-full relative z-10 pointer-events-none">
-            <div className="flex items-center pointer-events-auto">
-              {/* Minimalist Menu Button */}
-              <button className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95">
-                <Menu size={18} />
-              </button>
-            </div>
+        {/* Navigation Row */}
+        <div className="flex items-center justify-between px-6 py-2 bg-gradient-to-b from-black/40 to-transparent">
+          <div className="flex items-center gap-4">
+            {/* Minimalist Menu Button - Only One */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); }}
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95"
+            >
+              <Menu size={18} />
+            </button>
             
-            <div className="flex items-center gap-3 pointer-events-auto">
-              {/* Right Control Area: [Pause/Play] [Volume] (From Left to Right) */}
-              <button 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  setIsPaused(!isPaused);
-                  (window as any).isUserPaused = !isPaused;
-                  setFeedbackType(!isPaused ? 'pause' : 'play');
-                  setTimeout(() => setFeedbackType(null), 500);
-                }}
-                className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
-              >
-                {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
-              </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsUserMuted(!isUserMuted); }}
-                className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
-              >
-                {isUserMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </button>
-            </div>
+            {/* Search System - Integrated next to menu */}
+            <SearchSystem 
+              onExpandChange={(expanded) => {
+                setIsSearchExpanded(expanded);
+                if (expanded) resetStealthTimer(true);
+              }}
+              onStoreSelect={(id) => {
+                const store = stores.find(s => s.id === id);
+                if (store) {
+                  setSelectedStore(store);
+                  setShowOrderPanel(true);
+                  resetStealthTimer(true);
+                }
+              }}
+            />
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {/* Right Control Area: [Pause/Play] [Volume] */}
+            <button 
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                resetStealthTimer(true);
+                setIsPaused(!isPaused);
+                (window as any).isUserPaused = !isPaused;
+                setFeedbackType(!isPaused ? 'pause' : 'play');
+                setTimeout(() => setFeedbackType(null), 500);
+              }}
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+            >
+              {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
+            </button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); setIsUserMuted(!isUserMuted); }}
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+            >
+              {isUserMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
           </div>
         </div>
       </header>
@@ -587,12 +580,22 @@ export default function App() {
                         <div 
                           onClick={(e) => {
                             e.stopPropagation();
-                            const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
-                            window.open(url, '_blank');
+                            if (store.lat && store.lng) {
+                              const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
+                              window.open(url, '_blank');
+                            }
                           }}
-                          className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full cursor-pointer hover:bg-gold-primary/30 transition-all group"
+                          className={`flex items-center gap-1 px-2 py-0.5 backdrop-blur-md border rounded-full transition-all group ${
+                            (store.lat && store.lng) 
+                              ? "bg-gold-primary/30 border-gold-primary/50 cursor-pointer hover:bg-gold-primary/50 shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
+                              : "bg-white/10 border-white/10 cursor-default"
+                          }`}
                         >
-                          <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest group-hover:text-gold-primary transition-colors">#距離: {store.distance}</span>
+                          <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${
+                            (store.lat && store.lng) ? "text-gold-light" : "text-white/40"
+                          }`}>
+                            {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
+                          </span>
                         </div>
                       </div>
                       

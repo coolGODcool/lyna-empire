@@ -54,14 +54,16 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
         {isExpanded && (
           <motion.div
             initial={{ width: 0, opacity: 0, x: -10 }}
-            animate={{ width: "70vw", opacity: 1, x: 0 }}
+            animate={{ width: "75vw", opacity: 1, x: 0 }}
             exit={{ width: 0, opacity: 0, x: -10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="absolute left-0 top-0 h-8 bg-black/60 backdrop-blur-3xl border-b border-gold-primary/20 rounded-r-full flex items-center pl-20 pr-4 overflow-hidden shadow-[20px_0_40px_rgba(0,0,0,0.6)]"
+            className="absolute left-0 top-0 h-8 flex items-center pl-16 pr-4 overflow-hidden"
           >
             <input
               autoFocus
-              type="text"
+              type="search"
+              name="empire-search"
+              id="empire-search"
               inputMode="search"
               enterKeyHint="search"
               autoCorrect="off"
@@ -78,7 +80,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                 }
               }}
               placeholder={placeholders[placeholderIndex]}
-              className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/30 focus:outline-none"
+              className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/40 focus:outline-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />
             
             <div className="flex items-center gap-4">
@@ -98,17 +100,17 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                     if (navigator.vibrate) navigator.vibrate([10]);
                   }, 2000);
                 }}
-                className={`p-2 rounded-full transition-all select-none touch-callout-none ${
-                  isRecording ? "bg-red-500 text-white animate-pulse scale-125" : "text-gold-primary/70 hover:text-gold-primary"
+                className={`p-2 rounded-full transition-all select-none touch-callout-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
+                  isRecording ? "bg-red-500 text-white animate-pulse scale-125" : "text-gold-primary/80 hover:text-gold-primary"
                 }`}
               >
-                <Mic size={20} />
+                <Mic size={20} strokeWidth={1.5} />
               </button>
               <button
                 onClick={toggleExpand}
-                className="text-gold-primary/30 hover:text-gold-primary"
+                className="text-gold-primary/40 hover:text-gold-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
               >
-                <X size={16} />
+                <X size={18} strokeWidth={1.5} />
               </button>
             </div>
 

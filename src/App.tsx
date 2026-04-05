@@ -110,6 +110,7 @@ interface Store {
   serviceMode: 'mixed' | 'order' | 'reserve';
   lat: number;
   lng: number;
+  type: 'merchant' | 'user';
   isFriendly?: boolean;
   products?: Product[];
 }
@@ -136,6 +137,7 @@ export default function App() {
       lat: 22.6593,
       lng: 120.2930,
       isFriendly: true,
+      type: 'merchant',
       products: [
         { id: 'p1', name: '帝國黑金咖啡豆', price: 1200, image: 'https://picsum.photos/seed/coffee/200/200' },
         { id: 'p2', name: '萊娜手工餅乾', price: 450, image: 'https://picsum.photos/seed/cookie/200/200' }
@@ -156,6 +158,7 @@ export default function App() {
       serviceMode: 'order',
       lat: 22.6050,
       lng: 120.3050,
+      type: 'merchant',
       products: [
         { id: 'p3', name: 'A5 和牛拼盤', price: 3800, image: 'https://picsum.photos/seed/beef/200/200' }
       ]
@@ -174,7 +177,8 @@ export default function App() {
       tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
       serviceMode: 'reserve',
       lat: 22.6250,
-      lng: 120.3020
+      lng: 120.3020,
+      type: 'merchant'
     },
     { 
       id: "4", 
@@ -190,7 +194,8 @@ export default function App() {
       tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
       serviceMode: 'reserve',
       lat: 22.6750,
-      lng: 120.3010
+      lng: 120.3010,
+      type: 'merchant'
     },
     { 
       id: "5", 
@@ -206,7 +211,25 @@ export default function App() {
       tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
       serviceMode: 'mixed',
       lat: 22.6300,
-      lng: 120.3000
+      lng: 120.3000,
+      type: 'merchant'
+    },
+    { 
+      id: "6", 
+      name: "子民小明", 
+      description: "熱愛帝國生活，分享我的每日穿搭與冒險。", 
+      image: "https://picsum.photos/seed/user1/200/200",
+      video: "/assets/videos/v2.mp4",
+      category: "生活分享",
+      rating: 8.5,
+      distance: "0.1 KM",
+      sales: "0",
+      queueTime: "在線",
+      tags: ["#穿搭", "#生活", "#子民"],
+      serviceMode: 'mixed',
+      lat: 22.6000,
+      lng: 120.3000,
+      type: 'user'
     }
   ];
 
@@ -334,7 +357,11 @@ export default function App() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const id = entry.target.getAttribute('data-id');
-            if (id) setActiveVideoId(id);
+            if (id) {
+              setActiveVideoId(id);
+              const store = stores.find(s => s.id === id);
+              if (store) setSelectedStore(store);
+            }
             
             // 硬核攔截：如果全局鎖開啟，確保該區域內的影片保持暫停
             const video = entry.target.querySelector('video');
@@ -630,6 +657,26 @@ export default function App() {
                             <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
                               <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
                             </div>
+                            <div 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (store.lat && store.lng) {
+                                  const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
+                                  window.open(url, '_blank');
+                                }
+                              }}
+                              className={`flex items-center gap-1 px-2 py-0.5 backdrop-blur-md border rounded-full transition-all group ${
+                                (store.lat && store.lng) 
+                                  ? "bg-gold-primary/30 border-gold-primary/50 cursor-pointer hover:bg-gold-primary/50 shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
+                                  : "bg-white/10 border-white/10 cursor-default"
+                              }`}
+                            >
+                              <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${
+                                (store.lat && store.lng) ? "text-gold-light" : "text-white/40"
+                              }`}>
+                                {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
+                              </span>
+                            </div>
                             {store.isFriendly && (
                               <div className="flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full">
                                 <ShieldCheck size={10} className="text-cyan-400" />
@@ -711,7 +758,7 @@ export default function App() {
                     <ReelInfoPanel 
                       isOpen={horizontalPage === "info"}
                       onClose={() => setHorizontalPage("reel")}
-                      type="merchant"
+                      type={selectedStore.type}
                       data={{
                         name: selectedStore.name,
                         avatar: selectedStore.image,
@@ -911,26 +958,12 @@ export default function App() {
       <nav className="fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto">
         <div className="flex justify-between items-center w-full">
           <NavIcon 
-            icon={
-              <img 
-                src="/images.png" 
-                alt="Home" 
-                className={`w-8 h-8 object-contain transition-all ${activeTab === "home" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/home/100/100"; }}
-              />
-            } 
+            icon={<LynaLIcon active={activeTab === "home"} />} 
             active={activeTab === "home"} 
             onClick={() => setActiveTab("home")} 
           />
           <NavIcon 
-            icon={
-              <img 
-                src="/images.png" 
-                alt="Butler" 
-                className={`w-8 h-8 object-contain transition-all ${activeTab === "butler" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/butler/100/100"; }}
-              />
-            } 
+            icon={<ButlerIcon active={activeTab === "butler"} />} 
             active={activeTab === "butler"} 
             onClick={() => setActiveTab("butler")} 
           />
@@ -939,35 +972,18 @@ export default function App() {
               onClick={() => setActiveTab("plus")}
               className="w-16 h-16 flex items-center justify-center text-gold-primary drop-shadow-[0_0_20px_rgba(212,175,55,0.7)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
             >
-              <img 
-                src="/images.png" 
-                alt="Plus" 
-                className="w-12 h-12 object-contain brightness-150" 
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/plus/100/100"; }}
-              />
+              <div className="w-12 h-12 bg-gold-primary rounded-full flex items-center justify-center text-black shadow-[0_0_15px_rgba(212,175,55,0.5)]">
+                <Plus size={32} strokeWidth={3} />
+              </div>
             </button>
           </div>
           <NavIcon 
-            icon={
-              <img 
-                src="/images.png" 
-                alt="Quests" 
-                className={`w-8 h-8 object-contain transition-all ${activeTab === "announcements" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/quests/100/100"; }}
-              />
-            } 
+            icon={<QuestsIcon active={activeTab === "announcements"} />} 
             active={activeTab === "announcements"} 
             onClick={() => setActiveTab("announcements")} 
           />
           <NavIcon 
-            icon={
-              <img 
-                src="/images.png" 
-                alt="Lounge" 
-                className={`w-8 h-8 object-contain transition-all ${activeTab === "lounge" ? "brightness-125 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" : "opacity-60 grayscale"}`} 
-                onError={(e) => { (e.target as HTMLImageElement).src = "https://picsum.photos/seed/lounge/100/100"; }}
-              />
-            } 
+            icon={<LoungeIcon active={activeTab === "lounge"} />} 
             active={activeTab === "lounge"} 
             onClick={() => setActiveTab("lounge")} 
           />

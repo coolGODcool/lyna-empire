@@ -82,13 +82,6 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                   onExpandChange(false);
                 }
               }}
-              onBlur={() => {
-                // 延遲一下，讓點擊下拉選單的動作能先觸發
-                setTimeout(() => {
-                  // 如果不是因為點擊內部而失焦，則收起
-                  // 這裡靠 handleClickOutside 處理更穩健，但 Enter 鍵需要手動收起
-                }, 100);
-              }}
               placeholder="搜尋"
               className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/40 focus:outline-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />

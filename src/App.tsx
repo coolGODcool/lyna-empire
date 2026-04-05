@@ -366,6 +366,7 @@ export default function App() {
               setTimeout(() => setShowFountain(false), 1000);
             }
           } else if (finalCount >= 4) {
+            resetStealthTimer(true);
             // 4 下：發布懸賞 (Bounty)
             setShowBounty(true);
           }
@@ -379,6 +380,7 @@ export default function App() {
     clickCount.current += 1;
 
     longPressTimer.current = setTimeout(() => {
+      // 只有在沒有明顯位移的情況下才啟動長按
       setLongPressActive(true);
       // 長按時取消點擊計數
       if (clickTimer.current) {
@@ -952,11 +954,13 @@ function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, la
           e.stopPropagation();
           onClick?.(e);
         }}
-        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:gold-flow-bg group-hover:text-black transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.05)]"
+        className="w-12 h-12 flex items-center justify-center text-white transition-all cursor-pointer active:scale-90"
       >
-        {icon}
+        <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+          {icon}
+        </div>
       </div>
-      <span className="text-[9px] font-bold text-white drop-shadow-md opacity-80 group-hover:opacity-100">{label}</span>
+      <span className="text-[9px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] opacity-90 group-hover:opacity-100">{label}</span>
     </div>
   );
 }

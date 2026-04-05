@@ -124,13 +124,18 @@ export default function BountyPanel({ isOpen, onClose, onConfirm }: BountyPanelP
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">當前懸賞金額</p>
                       
                       <div className="flex flex-col items-center justify-center gap-6">
-                        <div className="relative">
+                        <div className="relative flex items-center justify-center h-[60px]">
                           <input 
                             type="number"
                             inputMode="numeric"
+                            pattern="[0-9]*"
+                            autoCorrect="off"
+                            autoComplete="off"
+                            spellCheck="false"
                             value={amount}
                             onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                            className="w-40 bg-transparent text-5xl font-black font-mono text-white text-center focus:outline-none tracking-tighter"
+                            className="w-40 bg-transparent text-5xl font-black font-mono text-white text-center focus:outline-none tracking-tighter p-0"
+                            style={{ lineHeight: '60px', height: '60px' }}
                           />
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-black text-gold-primary/60 uppercase">L-Coin</div>
                         </div>

@@ -200,6 +200,11 @@ export default function App() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [feedbackType, setFeedbackType] = useState<'play' | 'pause' | null>(null);
 
+  // 初始化全局鎖
+  useEffect(() => {
+    (window as any).isUserPaused = isPaused;
+  }, [isPaused]);
+
   // 任務二：頂部「公益金季度百分比」算法 (Quarterly Progress Logic)
   const getQuarterlyProgress = () => {
     const now = new Date();
@@ -229,6 +234,12 @@ export default function App() {
           if (entry.isIntersecting) {
             const id = entry.target.getAttribute('data-id');
             if (id) setActiveVideoId(id);
+            
+            // 硬核攔截：如果全局鎖開啟，確保該區域內的影片保持暫停
+            const video = entry.target.querySelector('video');
+            if (video && (window as any).isUserPaused) {
+              video.pause();
+            }
           }
         });
       },

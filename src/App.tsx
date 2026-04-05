@@ -227,8 +227,8 @@ export default function App() {
     if (forceVisible) setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     stealthTimerRef.current = setTimeout(() => {
-      // 完善沉浸式隱身計時器：暫停時不准躲起來
-      if (!isPaused) {
+      // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
+      if (!isPaused && !isSearchExpanded) {
         setIsUiVisible(false);
       }
     }, 5000);
@@ -239,7 +239,7 @@ export default function App() {
     return () => {
       if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     };
-  }, [isPaused]);
+  }, [isPaused, isSearchExpanded]);
 
   const updateWeights = (tags: string[]) => {
     setInterestWeights(prev => {

@@ -132,7 +132,7 @@ export default function App() {
       distance: "0.8 KM",
       sales: "2.5K",
       queueTime: "10min",
-      tags: ["#高雄", "#鼓山區", "#精品餐飲", "#評價: 9.9"],
+      tags: ["#高雄區", "#咖啡廳", "#寵物友善", "#評價: 9.9"],
       serviceMode: 'mixed',
       lat: 22.6593,
       lng: 120.2930,
@@ -154,7 +154,7 @@ export default function App() {
       distance: "1.2 KM",
       sales: "1.2K",
       queueTime: "25min",
-      tags: ["#高雄", "#前鎮區", "#和牛", "#評價: 9.7"],
+      tags: ["#高雄區", "#燒肉", "#和牛", "#評價: 9.7"],
       serviceMode: 'order',
       lat: 22.6050,
       lng: 120.3050,
@@ -243,7 +243,7 @@ export default function App() {
   const [showBalance, setShowBalance] = useState(true);
   const [showMarquee, setShowMarquee] = useState(true);
   const [longPressActive, setLongPressActive] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(initialStores[0]);
   const [isShopRedirect, setIsShopRedirect] = useState(false);
   const [likes, setLikes] = useState(995); // Start near threshold
   const [isLiked, setIsLiked] = useState(false);
@@ -469,16 +469,16 @@ export default function App() {
     // 左右滑動手勢導航 - 僅在 Reel 影片分頁有效
     if (activeTab === "home" && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
       if (dx > 50) {
-        // 由左往右滑：回到 Reel 影片
+        // 由左往右滑：開啟領主名片/店家詳情面板 (Info)
+        setHorizontalPage("info");
+      } else if (dx < -50) {
+        // 由右往左滑：回到 Reel 影片
         if (horizontalPage === "info") {
           setHorizontalPage("reel");
         } else {
           // 如果已經在 Reel，開啟個人資訊/資產側邊欄 (Lounge)
           setActiveTab("lounge");
         }
-      } else if (dx < -50) {
-        // 由右往左滑：開啟領主名片/店家詳情面板 (Info)
-        setHorizontalPage("info");
       }
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
@@ -613,11 +613,34 @@ export default function App() {
             >
               {/* Horizontal Swipe Container */}
               <motion.div
-                animate={{ x: horizontalPage === "reel" ? 0 : "-100%" }}
+                animate={{ x: horizontalPage === "reel" ? "-50%" : "0%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
                 className="flex h-full w-[200%] overflow-hidden"
               >
-                {/* Reel Page */}
+                {/* Info Page (Left Side) */}
+                <div className="w-1/2 h-full relative">
+                  {selectedStore && (
+                    <ReelInfoPanel 
+                      isOpen={horizontalPage === "info"}
+                      onClose={() => setHorizontalPage("reel")}
+                      type={selectedStore.type}
+                      data={{
+                        name: selectedStore.name,
+                        avatar: selectedStore.image,
+                        description: selectedStore.description,
+                        isFriendly: selectedStore.isFriendly,
+                        products: selectedStore.products || [],
+                        videos: [
+                          { id: 'v1', thumbnail: 'https://picsum.photos/seed/v1/300/400', likes: '1.2k' },
+                          { id: 'v2', thumbnail: 'https://picsum.photos/seed/v2/300/400', likes: '850' },
+                          { id: 'v3', thumbnail: 'https://picsum.photos/seed/v3/300/400', likes: '2.1k' },
+                        ]
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Reel Page (Right Side) */}
                 <div className="w-1/2 h-full snap-container overflow-y-scroll overflow-x-hidden snap-y snap-mandatory bg-black">
                   {loading ? (
                     <div className="h-dvh flex items-center justify-center">
@@ -651,7 +674,7 @@ export default function App() {
                             setIsInfoExpanded(!isInfoExpanded);
                             resetStealthTimer();
                           }}
-                          className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                          className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         >
                           <div className="flex flex-wrap gap-2 items-center">
                             <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
@@ -684,6 +707,16 @@ export default function App() {
                               </div>
                             )}
                           </div>
+                          
+                          {/* Tags - Visible when expanded */}
+                          <div className={`flex flex-wrap gap-1.5 transition-all duration-500 overflow-hidden ${isInfoExpanded ? 'max-h-20 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                            {store.tags.map((tag, idx) => (
+                              <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+
                           <div className="flex items-center gap-2">
                             <div className="w-10 h-10 rounded-full border-2 border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
                               <img src={store.image} alt={store.name} className="w-full h-full object-cover" />

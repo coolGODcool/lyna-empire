@@ -19,7 +19,6 @@ import {
   EyeOff,
   Clock,
   X,
-  Mic,
   Spade,
   Coins,
   ShieldCheck,
@@ -52,15 +51,8 @@ function LynaLIcon({ active }: { active: boolean }) {
 
 function ButlerIcon({ active }: { active: boolean }) {
   return (
-    <div className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-all duration-300 ${active ? 'border-gold-primary breathing-gold' : 'border-gold-primary/30'}`}>
-      <img 
-        src="/IMG_4166.PNG" 
-        alt="Butler" 
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "https://picsum.photos/seed/butler/100/100";
-        }}
-      />
+    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${active ? 'bg-gold-primary/20 border-2 border-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-2 border-gold-primary/30'}`}>
+      <Crown size={18} className={active ? "text-gold-light" : "text-gold-primary/60"} />
     </div>
   );
 }
@@ -595,8 +587,8 @@ export default function App() {
         </AnimatePresence>
       </header>
 
-      {/* Main Content Area */}
-      <main className="h-full w-full pb-[120px]">
+      {/* Main Content Area - 強制透明度為 1 避免黑屏 */}
+      <main className="h-full w-full pb-[120px]" style={{ opacity: 1 }}>
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div 
@@ -644,15 +636,16 @@ export default function App() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
                         
-                        {/* Info Tags - Bottom Left */}
+                        {/* Info Tags - Bottom Left - 點擊展開邏輯 */}
                         <div 
                           onClick={(e) => {
                             e.stopPropagation();
                             setIsInfoExpanded(!isInfoExpanded);
                             resetStealthTimer();
                           }}
-                          className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                          className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
                         >
+                          {/* Minimal View (Default) */}
                           <div className="flex flex-wrap gap-2 items-center">
                             <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
                               <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
@@ -677,35 +670,43 @@ export default function App() {
                                 {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
                               </span>
                             </div>
-                            {store.isFriendly && (
-                              <div className="flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full">
-                                <ShieldCheck size={10} className="text-cyan-400" />
-                                <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">友善專區</span>
+                            {!isInfoExpanded && (
+                              <div className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-2 animate-pulse">
+                                點擊展開詳情
                               </div>
                             )}
                           </div>
                           
-                          {/* Tags - Visible when expanded */}
-                          <div className={`flex flex-wrap gap-1.5 transition-all duration-500 overflow-hidden ${isInfoExpanded ? 'max-h-20 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
-                            {store.tags.map((tag, idx) => (
-                              <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-full border-2 border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
-                              <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                          {/* Expanded Content */}
+                          <motion.div 
+                            initial={false}
+                            animate={{ 
+                              height: isInfoExpanded ? "auto" : 0,
+                              opacity: isInfoExpanded ? 1 : 0,
+                              marginTop: isInfoExpanded ? 8 : 0
+                            }}
+                            className="overflow-hidden space-y-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full border border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+                                <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
+                                <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
+                              </div>
                             </div>
-                            <div>
-                              <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
+                            <p className="text-xs text-white/90 font-bold leading-relaxed drop-shadow-md">
+                              {store.description}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {store.tags.map((tag, idx) => (
+                                <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                  {tag}
+                                </span>
+                              ))}
                             </div>
-                          </div>
-                          <p className={`text-xs text-white/90 font-bold leading-relaxed drop-shadow-md transition-all duration-500 ${isInfoExpanded ? 'line-clamp-none' : 'line-clamp-2'}`}>
-                            {store.description}
-                          </p>
+                          </motion.div>
                         </div>
 
                         {/* Right Sidebar Interaction Chain */}

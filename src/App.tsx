@@ -270,6 +270,7 @@ export default function App() {
 
         if (isInCenter) {
           const finalCount = clickCount.current;
+          // 帝國手勢指令集：1下暫停、2下系統預留、3下喜歡、4下懸賞
           if (finalCount === 1) {
             setIsPaused(prev => {
               const next = !prev;
@@ -278,7 +279,8 @@ export default function App() {
               setTimeout(() => setFeedbackType(null), 500);
               return next;
             });
-          } else if (finalCount === 2) {
+          } else if (finalCount === 3) {
+            // 3 下：喜歡 (Like - 噴金心)
             if (isLiked) {
               setLikes(prev => prev - 1);
               setIsLiked(false);
@@ -289,13 +291,15 @@ export default function App() {
               setShowFountain(true);
               setTimeout(() => setShowFountain(false), 1000);
             }
-          } else if (finalCount >= 3) {
+          } else if (finalCount >= 4) {
+            // 4 下：發布懸賞 (Bounty)
             setShowBounty(true);
           }
+          // finalCount === 2 時無動作，留給系統縮放
         }
         clickCount.current = 0;
         clickTimer.current = null;
-      }, 350); // 放寬到 350ms，iOS 最穩定閾值
+      }, 400); // 延長至 400ms，為 4 連擊提供充足空間
     }
 
     clickCount.current += 1;
@@ -357,7 +361,7 @@ export default function App() {
       {/* CEO Header */}
       <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px] pointer-events-auto">
         {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
-        <div className="mx-[-1.5rem] relative h-8 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] overflow-hidden z-[60]">
+        <div className="mx-[-1.5rem] relative h-8 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-[60]">
           {/* Search System - Integrated into the bar's left side */}
           <SearchSystem 
             onExpandChange={setIsSearchExpanded}
@@ -379,9 +383,9 @@ export default function App() {
           
           {/* Text Overlay - Large & Prestigious */}
           <div className={`absolute inset-0 flex items-center justify-center px-6 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 py-1">
               <Sparkles size={14} className="text-gold-light animate-pulse" />
-              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)]">
+              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)] leading-none">
                 本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M
               </span>
             </div>
@@ -679,7 +683,7 @@ export default function App() {
                   <ShieldCheck className="text-gold-primary w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-black text-white italic tracking-tighter">金融安全二次確認</h3>
-                <p className="text-sm text-gray-400 font-bold">確定要為此影片贊助 <span className="text-gold-primary">{pendingDonationAmount} L-Coin</span> 嗎？</p>
+                <p className="text-sm text-gray-400 font-bold">確定要支持 <span className="text-gold-primary">{pendingDonationAmount} L-Coin</span> 嗎？😏</p>
               </div>
 
               <div className="bg-white/5 rounded-2xl p-4 space-y-2 border border-white/5">

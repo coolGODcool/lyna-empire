@@ -82,8 +82,18 @@ function LoungeIcon({ active }: { active: boolean }) {
   );
 }
 
+import ReelInfoPanel from "./components/ReelInfoPanel";
+
 // Types
 type Tab = "home" | "butler" | "plus" | "announcements" | "lounge";
+type HorizontalPage = "reel" | "info";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+}
 
 interface Store {
   id: string;
@@ -100,11 +110,14 @@ interface Store {
   serviceMode: 'mixed' | 'order' | 'reserve';
   lat: number;
   lng: number;
+  isFriendly?: boolean;
+  products?: Product[];
 }
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const [userId] = useState("LN-001"); // Mock identity: LN-001 (CEO), Lord_001, or User_001
+  const [horizontalPage, setHorizontalPage] = useState<HorizontalPage>("reel");
+  const [userId] = useState("LN-001");
   
   const initialStores: Store[] = [
     { 
@@ -121,7 +134,12 @@ export default function App() {
       tags: ["#高雄", "#鼓山區", "#精品餐飲", "#評價: 9.9"],
       serviceMode: 'mixed',
       lat: 22.6593,
-      lng: 120.2930
+      lng: 120.2930,
+      isFriendly: true,
+      products: [
+        { id: 'p1', name: '帝國黑金咖啡豆', price: 1200, image: 'https://picsum.photos/seed/coffee/200/200' },
+        { id: 'p2', name: '萊娜手工餅乾', price: 450, image: 'https://picsum.photos/seed/cookie/200/200' }
+      ]
     },
     { 
       id: "2", 
@@ -137,7 +155,10 @@ export default function App() {
       tags: ["#高雄", "#前鎮區", "#和牛", "#評價: 9.7"],
       serviceMode: 'order',
       lat: 22.6050,
-      lng: 120.3050
+      lng: 120.3050,
+      products: [
+        { id: 'p3', name: 'A5 和牛拼盤', price: 3800, image: 'https://picsum.photos/seed/beef/200/200' }
+      ]
     },
     { 
       id: "3", 
@@ -418,14 +439,19 @@ export default function App() {
       setLongPressActive(false);
     }
 
-    // 左右滑動手勢導航
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+    // 左右滑動手勢導航 - 僅在 Reel 影片分頁有效
+    if (activeTab === "home" && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
       if (dx > 50) {
-        // 由左往右滑：開啟個人資訊/資產側邊欄 (Lounge)
-        setActiveTab("lounge");
+        // 由左往右滑：回到 Reel 影片
+        if (horizontalPage === "info") {
+          setHorizontalPage("reel");
+        } else {
+          // 如果已經在 Reel，開啟個人資訊/資產側邊欄 (Lounge)
+          setActiveTab("lounge");
+        }
       } else if (dx < -50) {
-        // 由右往左滑：開啟領主名片/店家詳情面板 (OrderDrawer)
-        setShowOrderPanel(true);
+        // 由右往左滑：開啟領主名片/店家詳情面板 (Info)
+        setHorizontalPage("info");
       }
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
@@ -556,188 +582,152 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="snap-container h-dvh overflow-y-scroll overflow-x-hidden snap-y snap-mandatory w-full bg-black"
+              className="relative h-dvh w-full overflow-hidden"
             >
-              {loading ? (
-                <div className="h-dvh flex items-center justify-center">
-                  <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                sortedStores.map((store) => (
-                  <div 
-                    key={store.id} 
-                    data-id={store.id}
-                    className="snap-item relative h-dvh w-full snap-start overflow-hidden pointer-events-auto"
-                    onMouseDown={(e) => handleInteractionStart(e, store)}
-                    onMouseUp={handleInteractionEnd}
-                    onTouchStart={(e) => handleInteractionStart(e, store)}
-                    onTouchEnd={handleInteractionEnd}
-                  >
-                    <VideoPlayer 
-                      src={store.video} 
-                      poster={store.image} 
-                      isActive={activeVideoId === store.id} 
-                      isPaused={isPaused && activeVideoId === store.id}
-                      muted={isUserMuted}
-                      feedbackType={activeVideoId === store.id ? feedbackType : null}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
-                    
-                    {/* Info Tags - Bottom Left */}
-                    <div 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsInfoExpanded(!isInfoExpanded);
-                        resetStealthTimer();
-                      }}
-                      className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                    >
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
-                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
-                        </div>
+              {/* Horizontal Swipe Container */}
+              <motion.div
+                animate={{ x: horizontalPage === "reel" ? 0 : "-100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="flex h-full w-[200%] overflow-hidden"
+              >
+                {/* Reel Page */}
+                <div className="w-1/2 h-full snap-container overflow-y-scroll overflow-x-hidden snap-y snap-mandatory bg-black">
+                  {loading ? (
+                    <div className="h-dvh flex items-center justify-center">
+                      <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                    sortedStores.map((store) => (
+                      <div 
+                        key={store.id} 
+                        data-id={store.id}
+                        className="snap-item relative h-dvh w-full snap-start overflow-hidden pointer-events-auto"
+                        onMouseDown={(e) => handleInteractionStart(e, store)}
+                        onMouseUp={handleInteractionEnd}
+                        onTouchStart={(e) => handleInteractionStart(e, store)}
+                        onTouchEnd={handleInteractionEnd}
+                      >
+                        <VideoPlayer 
+                          src={store.video} 
+                          poster={store.image} 
+                          isActive={activeVideoId === store.id} 
+                          isPaused={isPaused && activeVideoId === store.id}
+                          muted={isUserMuted}
+                          feedbackType={activeVideoId === store.id ? feedbackType : null}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
+                        
+                        {/* Info Tags - Bottom Left */}
                         <div 
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (store.lat && store.lng) {
-                              const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
-                              window.open(url, '_blank');
-                            }
+                            setIsInfoExpanded(!isInfoExpanded);
+                            resetStealthTimer();
                           }}
-                          className={`flex items-center gap-1 px-2 py-0.5 backdrop-blur-md border rounded-full transition-all group ${
-                            (store.lat && store.lng) 
-                              ? "bg-gold-primary/30 border-gold-primary/50 cursor-pointer hover:bg-gold-primary/50 shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
-                              : "bg-white/10 border-white/10 cursor-default"
-                          }`}
+                          className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                         >
-                          <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${
-                            (store.lat && store.lng) ? "text-gold-light" : "text-white/40"
-                          }`}>
-                            {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-black text-white drop-shadow-lg italic tracking-tighter">{store.name}</h3>
-                      </div>
-                      
-                      <p className={`text-[11px] text-gray-300 drop-shadow-md font-medium transition-all duration-300 ${isInfoExpanded ? 'line-clamp-none' : 'line-clamp-1'}`}>
-                        {store.description}
-                      </p>
-                      
-                      {isInfoExpanded && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="pt-2 flex flex-wrap gap-2"
-                        >
-                          {store.tags.map((tag, idx) => (
-                            <span key={idx} className="px-2 py-0.5 bg-black/40 backdrop-blur-md border border-white/10 text-[8px] font-bold text-gold-light rounded-full">
-                              {tag}
-                            </span>
-                          ))}
-                        </motion.div>
-                      )}
-                    </div>
-
-                    {/* Right Sidebar Interaction Chain */}
-                    <div className={`absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      {/* Dynamic Clock/Calendar Logic - Transparent Style */}
-                      <div 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowOrderPanel(true);
-                          resetStealthTimer();
-                          updateWeights(store.tags);
-                        }}
-                        className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform group"
-                      >
-                        <div className="w-12 h-12 flex items-center justify-center text-gold-primary transition-all">
-                          <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                            {store.serviceMode === 'reserve' ? <Calendar size={20} strokeWidth={1.5} /> : <Clock size={20} strokeWidth={1.5} />}
+                          <div className="flex flex-wrap gap-2 items-center">
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
+                              <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
+                            </div>
+                            {store.isFriendly && (
+                              <div className="flex items-center gap-1 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full">
+                                <ShieldCheck size={10} className="text-cyan-400" />
+                                <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">友善專區</span>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <span className="text-[9px] font-black text-gold-primary drop-shadow-md opacity-90 group-hover:opacity-100">
-                          {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
-                        </span>
-                      </div>
-
-                      <InteractionButton 
-                        icon={<Heart size={18} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
-                        label={likes.toLocaleString()} 
-                        onClick={() => {
-                          resetStealthTimer();
-                          updateWeights(store.tags);
-                          if (isLiked) {
-                            setLikes(prev => prev - 1);
-                            setIsLiked(false);
-                          } else {
-                            setLikes(prev => prev + 1);
-                            setIsLiked(true);
-                            setShowFountain(true);
-                            setTimeout(() => setShowFountain(false), 1000);
-                          }
-                        }}
-                      />
-                      <InteractionButton icon={<Coins size={18} />} label="贊助" onClick={() => { setShowSupport(true); resetStealthTimer(); updateWeights(store.tags); }} />
-                      <InteractionButton icon={<MessageSquare size={18} />} label="留言" onClick={() => { setShowComments(true); resetStealthTimer(); updateWeights(store.tags); }} />
-                      <InteractionButton icon={<Share2 size={18} />} label="分享" onClick={() => {
-                        resetStealthTimer();
-                        updateWeights(store.tags);
-                        const referralCode = `LYNA-${userId}-${store.id}`;
-                        navigator.clipboard.writeText(`${window.location.origin}/?shopId=${store.id}&ref=${referralCode}`);
-                        alert(`推薦碼 ${referralCode} 已複製！連動 1% 導購分潤。`);
-                      }} />
-                    </div>
-
-                    {/* Gold Fountain Visual (Double Tap) */}
-                    <AnimatePresence>
-                      {showFountain && (
-                        <motion.div 
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 1.5, opacity: 0 }}
-                          className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                        >
-                          <div className="relative">
-                            {[...Array(12)].map((_, i) => (
-                              <motion.div
-                                key={i}
-                                initial={{ y: 0, x: 0, opacity: 1 }}
-                                animate={{ y: -200 - Math.random() * 100, x: (Math.random() - 0.5) * 400, opacity: 0, rotate: 360 }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                                className="absolute text-gold-primary"
-                              >
-                                <Coins size={32} fill="currentColor" />
-                              </motion.div>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Long Press Ripple Effect */}
-                    <AnimatePresence>
-                      {longPressActive && (
-                        <motion.div 
-                          initial={{ scale: 0.5, opacity: 0 }}
-                          animate={{ scale: 1.5, opacity: 1 }}
-                          exit={{ scale: 2, opacity: 0 }}
-                          className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
-                        >
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-gold-primary/20 rounded-full animate-ping" />
-                            <div className="w-24 h-24 rounded-full bg-gold-primary/10 border-2 border-gold-primary/40 flex items-center justify-center">
-                              <Mic className="text-gold-primary animate-bounce" size={40} />
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-full border-2 border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+                              <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
                             </div>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ))
-              )}
+                          <p className={`text-xs text-white/90 font-bold leading-relaxed drop-shadow-md transition-all duration-500 ${isInfoExpanded ? 'line-clamp-none' : 'line-clamp-2'}`}>
+                            {store.description}
+                          </p>
+                        </div>
+
+                        {/* Right Sidebar Interaction Chain */}
+                        <div className={`absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                          {/* Dynamic Clock/Calendar Logic - Transparent Style */}
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowOrderPanel(true);
+                              resetStealthTimer();
+                              updateWeights(store.tags);
+                            }}
+                            className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform group"
+                          >
+                            <div className="w-12 h-12 flex items-center justify-center text-gold-primary transition-all">
+                              <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                {store.serviceMode === 'reserve' ? <Calendar size={20} strokeWidth={1.5} /> : <Clock size={20} strokeWidth={1.5} />}
+                              </div>
+                            </div>
+                            <span className="text-[9px] font-black text-gold-primary drop-shadow-md opacity-90 group-hover:opacity-100">
+                              {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
+                            </span>
+                          </div>
+
+                          <InteractionButton 
+                            icon={<Heart size={18} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
+                            label={likes.toLocaleString()} 
+                            onClick={() => {
+                              resetStealthTimer();
+                              updateWeights(store.tags);
+                              if (isLiked) {
+                                setLikes(prev => prev - 1);
+                                setIsLiked(false);
+                              } else {
+                                setLikes(prev => prev + 1);
+                                setIsLiked(true);
+                                setShowFountain(true);
+                                setTimeout(() => setShowFountain(false), 1000);
+                              }
+                            }}
+                          />
+                          <InteractionButton icon={<Coins size={18} />} label="贊助" onClick={() => { setShowSupport(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                          <InteractionButton icon={<MessageSquare size={18} />} label="留言" onClick={() => { setShowComments(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                          <InteractionButton icon={<Share2 size={18} />} label="分享" onClick={() => {
+                            resetStealthTimer();
+                            updateWeights(store.tags);
+                            const referralCode = `LYNA-${userId}-${store.id}`;
+                            navigator.clipboard.writeText(`${window.location.origin}/?shopId=${store.id}&ref=${referralCode}`);
+                            alert(`推薦碼 ${referralCode} 已複製！連動 1% 導購分潤。`);
+                          }} />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Info Page (Right Side) */}
+                <div className="w-1/2 h-full relative">
+                  {selectedStore && (
+                    <ReelInfoPanel 
+                      isOpen={horizontalPage === "info"}
+                      onClose={() => setHorizontalPage("reel")}
+                      type="merchant"
+                      data={{
+                        name: selectedStore.name,
+                        avatar: selectedStore.image,
+                        description: selectedStore.description,
+                        isFriendly: selectedStore.isFriendly,
+                        products: selectedStore.products || [],
+                        videos: [
+                          { id: 'v1', thumbnail: 'https://picsum.photos/seed/v1/300/400', likes: '1.2k' },
+                          { id: 'v2', thumbnail: 'https://picsum.photos/seed/v2/300/400', likes: '850' },
+                          { id: 'v3', thumbnail: 'https://picsum.photos/seed/v3/300/400', likes: '2.1k' },
+                        ]
+                      }}
+                    />
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
           )}
 

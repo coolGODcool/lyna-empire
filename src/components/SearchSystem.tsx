@@ -75,6 +75,10 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
             <input
               autoFocus
               type="text"
+              inputMode="search"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck="false"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholders[placeholderIndex]}

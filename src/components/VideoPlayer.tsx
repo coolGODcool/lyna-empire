@@ -17,19 +17,40 @@ export default function VideoPlayer({ src, poster, isActive, isPaused = false, m
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (videoRef.current) {
-      if (isActive) {
-        if (isPaused) {
-          videoRef.current.pause();
-        } else {
-          videoRef.current.play().catch(err => console.log("Autoplay blocked", err));
-        }
-      } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePlay = () => {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          // 如果在加載完畢前用戶點了暫停，立即追回
+          if ((window as any).isUserPaused) {
+            video.pause();
+          }
+        }).catch(err => {
+          console.log("Play blocked or interrupted", err);
+        });
       }
+    };
+
+    if (isActive) {
+      if (isPaused) {
+        // 屬性移除鎖定 (Attribute Locking)
+        video.pause();
+        video.removeAttribute('autoplay');
+        video.muted = true; // 雙重保險
+      } else {
+        // 恢復播放時重新加入屬性
+        video.setAttribute('autoplay', 'true');
+        video.muted = muted;
+        handlePlay();
+      }
+    } else {
+      video.pause();
+      video.currentTime = 0;
     }
-  }, [isActive, isPaused]);
+  }, [isActive, isPaused, muted]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-black">

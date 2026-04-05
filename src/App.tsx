@@ -86,7 +86,7 @@ import ReelInfoPanel from "./components/ReelInfoPanel";
 
 // Types
 type Tab = "home" | "butler" | "plus" | "announcements" | "lounge";
-type HorizontalPage = "reel" | "info";
+type CarouselPage = 0 | 1 | 2; // 0:個人資訊, 1:Reels影片, 2:領主櫥窗
 
 interface Product {
   id: string;
@@ -117,7 +117,7 @@ interface Store {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const [horizontalPage, setHorizontalPage] = useState<HorizontalPage>("reel");
+  const [carouselIndex, setCarouselIndex] = useState<CarouselPage>(1);
   const [userId] = useState("LN-001");
   
   const initialStores: Store[] = [
@@ -271,8 +271,8 @@ export default function App() {
     if (forceVisible) setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     
-    // 只有在首頁影片區才啟動自動隱身
-    if (activeTab === "home") {
+    // 只有在首頁影片區 (carouselIndex === 1) 才啟動自動隱身
+    if (activeTab === "home" && carouselIndex === 1) {
       stealthTimerRef.current = setTimeout(() => {
         // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
         if (!isPaused && !isSearchExpanded) {
@@ -289,7 +289,7 @@ export default function App() {
     return () => {
       if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     };
-  }, [isPaused, isSearchExpanded, activeTab]);
+  }, [isPaused, isSearchExpanded, activeTab, carouselIndex]);
 
   const updateWeights = (tags: string[]) => {
     setInterestWeights(prev => {
@@ -469,16 +469,11 @@ export default function App() {
     // 左右滑動手勢導航 - 僅在 Reel 影片分頁有效
     if (activeTab === "home" && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
       if (dx > 50) {
-        // 由左往右滑：開啟領主名片/店家詳情面板 (Info)
-        setHorizontalPage("info");
+        // 由左往右滑：索引減 1 (無限循環)
+        setCarouselIndex(prev => ((prev - 1 + 3) % 3) as CarouselPage);
       } else if (dx < -50) {
-        // 由右往左滑：回到 Reel 影片
-        if (horizontalPage === "info") {
-          setHorizontalPage("reel");
-        } else {
-          // 如果已經在 Reel，開啟個人資訊/資產側邊欄 (Lounge)
-          setActiveTab("lounge");
-        }
+        // 由右往左滑：索引加 1 (無限循環)
+        setCarouselIndex(prev => ((prev + 1) % 3) as CarouselPage);
       }
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
@@ -538,7 +533,7 @@ export default function App() {
 
         {/* Navigation Row - Only visible in Home tab and when UI is visible */}
         <AnimatePresence>
-          {activeTab === "home" && isUiVisible && (
+          {activeTab === "home" && isUiVisible && carouselIndex === 1 && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -611,37 +606,19 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="relative h-dvh w-full overflow-hidden"
             >
-              {/* Horizontal Swipe Container */}
+              {/* Horizontal Infinite Carousel Container */}
               <motion.div
-                animate={{ x: horizontalPage === "reel" ? "-50%" : "0%" }}
+                animate={{ x: `-${carouselIndex * 100}%` }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="flex h-full w-[200%] overflow-hidden"
+                className="flex h-full w-[300%] overflow-hidden"
               >
-                {/* Info Page (Left Side) */}
-                <div className="w-1/2 h-full relative">
-                  {selectedStore && (
-                    <ReelInfoPanel 
-                      isOpen={horizontalPage === "info"}
-                      onClose={() => setHorizontalPage("reel")}
-                      type={selectedStore.type}
-                      data={{
-                        name: selectedStore.name,
-                        avatar: selectedStore.image,
-                        description: selectedStore.description,
-                        isFriendly: selectedStore.isFriendly,
-                        products: selectedStore.products || [],
-                        videos: [
-                          { id: 'v1', thumbnail: 'https://picsum.photos/seed/v1/300/400', likes: '1.2k' },
-                          { id: 'v2', thumbnail: 'https://picsum.photos/seed/v2/300/400', likes: '850' },
-                          { id: 'v3', thumbnail: 'https://picsum.photos/seed/v3/300/400', likes: '2.1k' },
-                        ]
-                      }}
-                    />
-                  )}
+                {/* 0: 個人資訊 (Lounge Content) */}
+                <div className="w-1/3 h-full relative overflow-y-auto no-scrollbar bg-black/95 pt-20">
+                  <Lounge userId={userId} />
                 </div>
 
-                {/* Reel Page (Right Side) */}
-                <div className="w-1/2 h-full snap-container overflow-y-scroll overflow-x-hidden snap-y snap-mandatory bg-black">
+                {/* 1: Reels 影片 (Home Content) */}
+                <div className="w-1/3 h-full snap-container overflow-y-scroll overflow-x-hidden snap-y snap-mandatory bg-black">
                   {loading ? (
                     <div className="h-dvh flex items-center justify-center">
                       <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
@@ -785,12 +762,12 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Info Page (Right Side) */}
-                <div className="w-1/2 h-full relative">
+                {/* 2: 領主櫥窗 (Info Panel Content) */}
+                <div className="w-1/3 h-full relative">
                   {selectedStore && (
                     <ReelInfoPanel 
-                      isOpen={horizontalPage === "info"}
-                      onClose={() => setHorizontalPage("reel")}
+                      isOpen={carouselIndex === 2}
+                      onClose={() => setCarouselIndex(1)}
                       type={selectedStore.type}
                       data={{
                         name: selectedStore.name,

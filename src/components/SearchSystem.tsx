@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, X, Mic, Flame, Star, MapPin, Zap, Menu, Clock } from "lucide-react";
+import { Search, X, Flame, Star, MapPin, Zap, Menu, Clock } from "lucide-react";
 
 interface SearchSystemProps {
   onExpandChange: (isExpanded: boolean) => void;

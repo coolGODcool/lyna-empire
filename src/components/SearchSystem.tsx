@@ -38,9 +38,9 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
   };
 
   return (
-    <div className="relative z-[110] flex items-center h-8 pointer-events-auto gap-3">
-      {/* Search Icons - Floating on Progress Bar */}
-      <div className="flex items-center gap-3 z-20">
+    <div className="relative z-[110] flex items-center h-8 pointer-events-auto w-full">
+      {/* Search Icon Button */}
+      <div className="flex items-center z-20">
         <button
           onClick={toggleExpand}
           className="text-gold-primary/80 hover:text-gold-light hover:scale-110 active:scale-95 transition-all drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]"
@@ -49,27 +49,28 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
         </button>
       </div>
 
-      {/* Search Bar Container - Slides out from under the progress bar area */}
+      {/* Search Bar Container - Slides out and fills available space */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            initial={{ width: 0, opacity: 0, x: -10 }}
-            animate={{ width: "75vw", opacity: 1, x: 0 }}
-            exit={{ width: 0, opacity: 0, x: -10 }}
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "100%", opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="absolute left-0 top-0 h-8 flex items-center pl-16 pr-4 overflow-hidden"
+            className="absolute left-0 top-0 h-8 flex items-center pl-8 pr-2 overflow-hidden bg-black/20 backdrop-blur-md rounded-full border border-gold-primary/10"
           >
             <input
               autoFocus
-              type="search"
-              name="empire-search"
-              id="empire-search"
+              type="text"
+              name="empire-search-input"
               inputMode="search"
               enterKeyHint="search"
               autoCorrect="off"
               autoComplete="off"
-              autoCapitalize="off"
+              autoCapitalize="none"
               spellCheck="false"
+              // 模擬 android:privateImeOptions="nm"
+              data-private="true"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -83,11 +84,11 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
               className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/40 focus:outline-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  // 回歸穩定：單次點擊開啟辨識
+                  // 徹底消滅自動語音：僅手動點擊觸發
                   if (navigator.vibrate) navigator.vibrate([50]);
                   setIsRecording(true);
                   
@@ -100,17 +101,17 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                     if (navigator.vibrate) navigator.vibrate([10]);
                   }, 2000);
                 }}
-                className={`p-2 rounded-full transition-all select-none touch-callout-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
-                  isRecording ? "bg-red-500 text-white animate-pulse scale-125" : "text-gold-primary/80 hover:text-gold-primary"
+                className={`p-1.5 rounded-full transition-all select-none touch-callout-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
+                  isRecording ? "bg-red-500 text-white animate-pulse scale-110" : "text-gold-primary/80 hover:text-gold-primary"
                 }`}
               >
-                <Mic size={20} strokeWidth={1.5} />
+                <Mic size={16} strokeWidth={1.5} />
               </button>
               <button
                 onClick={toggleExpand}
                 className="text-gold-primary/40 hover:text-gold-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
               >
-                <X size={18} strokeWidth={1.5} />
+                <X size={16} strokeWidth={1.5} />
               </button>
             </div>
 

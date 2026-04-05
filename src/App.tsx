@@ -478,14 +478,14 @@ export default function App() {
         </div>
 
         {/* Navigation Row */}
-        <div className="flex items-center justify-between px-6 py-2 bg-gradient-to-b from-black/40 to-transparent">
+        <div className="flex items-center justify-between px-6 py-2">
           <div className="flex items-center gap-4">
             {/* Minimalist Menu Button - Only One */}
             <button 
               onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); }}
-              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95"
+              className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
             >
-              <Menu size={18} />
+              <Menu size={22} strokeWidth={1.2} />
             </button>
             
             {/* Search System - Integrated next to menu */}
@@ -505,7 +505,7 @@ export default function App() {
             />
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
             {/* Right Control Area: [Pause/Play] [Volume] */}
             <button 
               onClick={(e) => { 
@@ -516,15 +516,15 @@ export default function App() {
                 setFeedbackType(!isPaused ? 'pause' : 'play');
                 setTimeout(() => setFeedbackType(null), 500);
               }}
-              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+              className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
             >
-              {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
+              {isPaused ? <Play size={22} strokeWidth={1.2} fill="currentColor" /> : <Pause size={22} strokeWidth={1.2} fill="currentColor" />}
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); setIsUserMuted(!isUserMuted); }}
-              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+              className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
             >
-              {isUserMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              {isUserMuted ? <VolumeX size={22} strokeWidth={1.2} /> : <Volume2 size={22} strokeWidth={1.2} />}
             </button>
           </div>
         </div>
@@ -898,9 +898,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Navigation Bar - 精緻模式 */}
-      <nav className={`fixed bottom-0 left-0 w-full z-50 px-6 py-6 bg-gradient-to-t from-black to-transparent transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className="glass-card flex justify-between items-center px-8 py-3 border-gold-primary/20">
+      {/* Navigation Bar - 去框化懸浮模式 */}
+      <nav className={`fixed bottom-0 left-0 w-full z-50 px-8 py-10 transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="flex justify-between items-center w-full">
           <NavIcon 
             icon={<LynaLIcon active={activeTab === "home"} />} 
             active={activeTab === "home"} 
@@ -911,12 +911,12 @@ export default function App() {
             active={activeTab === "butler"} 
             onClick={() => setActiveTab("butler")} 
           />
-          <div className="relative -top-6">
+          <div className="relative">
             <button 
               onClick={() => setActiveTab("plus")}
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-light via-gold-primary to-gold-dark text-black flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.5)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
+              className="w-16 h-16 flex items-center justify-center text-gold-primary drop-shadow-[0_0_20px_rgba(212,175,55,0.7)] hover:scale-110 active:scale-95 transition-all vibrate-on-click"
             >
-              <Plus size={18} strokeWidth={3} />
+              <Plus size={36} strokeWidth={2} />
             </button>
           </div>
           <NavIcon 
@@ -939,9 +939,11 @@ function NavIcon({ icon, active, onClick }: { icon: React.ReactNode, active: boo
   return (
     <button 
       onClick={onClick}
-      className={`p-1 transition-all duration-300 ${active ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
+      className={`p-2 transition-all duration-300 ${active ? 'scale-125 text-gold-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]' : 'text-white/60 hover:text-white hover:opacity-100'}`}
     >
-      {icon}
+      <div className="transform transition-transform">
+        {icon}
+      </div>
     </button>
   );
 }

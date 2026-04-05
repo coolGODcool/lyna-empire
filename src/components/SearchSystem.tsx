@@ -39,13 +39,26 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
 
   const handleVoiceStart = (e: React.TouchEvent | React.MouseEvent) => {
     e.preventDefault();
-    if (navigator.vibrate) navigator.vibrate(50);
+    e.stopPropagation();
+    if (navigator.vibrate) navigator.vibrate([50]);
     setIsRecording(true);
+    // 啟動語音辨識器邏輯 (模擬)
+    console.log("Voice recognition started...");
   };
 
-  const handleVoiceEnd = () => {
+  const handleVoiceEnd = (e: React.TouchEvent | React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isRecording) return;
+    
     setIsRecording(false);
-    if (navigator.vibrate) navigator.vibrate(10);
+    if (navigator.vibrate) navigator.vibrate([10]);
+    
+    // 獲取辨識結果並自動搜尋 (模擬)
+    const mockResults = ["萊娜精品咖啡", "五五六六和牛燒肉", "黑金流光威士忌吧"];
+    const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
+    setSearchQuery(randomResult);
+    console.log("Voice recognition ended. Result:", randomResult);
   };
 
   return (

@@ -478,34 +478,36 @@ export default function App() {
         </div>
 
         {/* Navigation Row */}
-        <div className="flex items-center justify-between px-6 py-2">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between px-6 py-2 gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Minimalist Menu Button - Only One */}
             <button 
               onClick={(e) => { e.stopPropagation(); resetStealthTimer(true); }}
-              className="w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+              className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gold-primary/70 hover:text-gold-primary transition-all active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
             >
               <Menu size={22} strokeWidth={1.2} />
             </button>
             
-            {/* Search System - Integrated next to menu */}
-            <SearchSystem 
-              onExpandChange={(expanded) => {
-                setIsSearchExpanded(expanded);
-                if (expanded) resetStealthTimer(true);
-              }}
-              onStoreSelect={(id) => {
-                const store = stores.find(s => s.id === id);
-                if (store) {
-                  setSelectedStore(store);
-                  setShowOrderPanel(true);
-                  resetStealthTimer(true);
-                }
-              }}
-            />
+            {/* Search System - Integrated next to menu with flex-1 to occupy space */}
+            <div className="flex-1 min-w-0">
+              <SearchSystem 
+                onExpandChange={(expanded) => {
+                  setIsSearchExpanded(expanded);
+                  if (expanded) resetStealthTimer(true);
+                }}
+                onStoreSelect={(id) => {
+                  const store = stores.find(s => s.id === id);
+                  if (store) {
+                    setSelectedStore(store);
+                    setShowOrderPanel(true);
+                    resetStealthTimer(true);
+                  }
+                }}
+              />
+            </div>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 flex-shrink-0 ml-4">
             {/* Right Control Area: [Pause/Play] [Volume] */}
             <button 
               onClick={(e) => { 

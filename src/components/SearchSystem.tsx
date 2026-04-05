@@ -11,8 +11,26 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [history] = useState(["萊娜精品咖啡", "和牛燒肉", "威士忌吧"]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const hotTags = ["#熱賣商品", "#發燒商品", "#領主推薦", "#精品餐飲"];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (isExpanded) {
+          setIsExpanded(false);
+          onExpandChange(false);
+          setSearchQuery("");
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isExpanded, onExpandChange]);
 
   const toggleExpand = () => {
     const nextState = !isExpanded;
@@ -22,7 +40,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
   };
 
   return (
-    <div className="relative z-[110] flex items-center h-8 pointer-events-auto w-full">
+    <div ref={containerRef} className="relative z-[110] flex items-center h-8 pointer-events-auto w-full">
       {/* Search Icon Button */}
       <div className="flex items-center z-20">
         <button
@@ -60,7 +78,16 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                 if (e.key === 'Enter') {
                   console.log("Searching for:", searchQuery);
                   (e.target as HTMLInputElement).blur();
+                  setIsExpanded(false);
+                  onExpandChange(false);
                 }
+              }}
+              onBlur={() => {
+                // 延遲一下，讓點擊下拉選單的動作能先觸發
+                setTimeout(() => {
+                  // 如果不是因為點擊內部而失焦，則收起
+                  // 這裡靠 handleClickOutside 處理更穩健，但 Enter 鍵需要手動收起
+                }, 100);
               }}
               placeholder="搜尋"
               className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/40 focus:outline-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"

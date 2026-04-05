@@ -209,20 +209,24 @@ export default function SupportPanel({ isOpen, onClose, onConfirm, initialAmount
                     </button>
                     <div className="flex flex-col items-center">
                       {isCustom ? (
-                        <div className="relative">
+                        <div className="relative flex items-center justify-center h-[60px]">
                           <input
                             ref={inputRef}
                             type="number"
                             inputMode="numeric"
+                            pattern="[0-9]*"
                             value={amount}
                             onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                            className="w-32 bg-transparent text-5xl font-black font-mono gold-gradient-text text-center focus:outline-none"
+                            className="w-40 bg-transparent text-5xl font-black font-mono gold-gradient-text text-center focus:outline-none p-0 leading-none flex items-center justify-center"
+                            style={{ lineHeight: '1', height: '100%' }}
                           />
                         </div>
                       ) : (
-                        <span className="text-5xl font-black font-mono gold-gradient-text">{amount}</span>
+                        <div className="h-[60px] flex items-center justify-center">
+                          <span className="text-5xl font-black font-mono gold-gradient-text leading-none">{amount}</span>
+                        </div>
                       )}
-                      <span className="text-[10px] text-gold-primary/60 font-bold tracking-[0.2em]">L-COIN</span>
+                      <span className="text-[10px] text-gold-primary/60 font-bold tracking-[0.2em] mt-1">L-COIN</span>
                     </div>
                     <button
                       onMouseDown={() => startHold(1)}

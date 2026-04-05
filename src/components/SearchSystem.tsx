@@ -20,6 +20,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
     "搜尋帝國規費..."
   ];
 
+  const butlerTags = ["#離我最近", "#發燒第一", "#生活樂趣"];
   const hotTags = ["#美食", "#新開幕", "#高評價", "#在地空投", "#領主推薦"];
 
   useEffect(() => {
@@ -85,24 +86,24 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
               className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/30 focus:outline-none"
             />
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button
                 onMouseDown={handleVoiceStart}
                 onMouseUp={handleVoiceEnd}
                 onMouseLeave={handleVoiceEnd}
                 onTouchStart={handleVoiceStart}
                 onTouchEnd={handleVoiceEnd}
-                className={`p-1 rounded-full transition-all select-none touch-callout-none ${
-                  isRecording ? "bg-red-500 text-white animate-pulse" : "text-gold-primary/50 hover:text-gold-primary"
+                className={`p-2 rounded-full transition-all select-none touch-callout-none ${
+                  isRecording ? "bg-red-500 text-white animate-pulse scale-125" : "text-gold-primary/70 hover:text-gold-primary"
                 }`}
               >
-                <Mic size={14} />
+                <Mic size={20} />
               </button>
               <button
                 onClick={toggleExpand}
                 className="text-gold-primary/30 hover:text-gold-primary"
               >
-                <X size={14} />
+                <X size={16} />
               </button>
             </div>
 
@@ -110,18 +111,36 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute top-full left-0 w-full bg-black/80 backdrop-blur-3xl border-x border-b border-gold-primary/10 rounded-b-2xl p-3 space-y-3 shadow-2xl"
+              className="absolute top-full left-0 w-full bg-black/90 backdrop-blur-3xl border-x border-b border-gold-primary/10 rounded-b-2xl p-4 space-y-4 shadow-2xl"
             >
-              <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                {hotTags.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => setSearchQuery(tag)}
-                    className="flex-shrink-0 px-2.5 py-1 rounded-full bg-gold-primary/5 border border-gold-primary/10 text-[9px] font-black text-gold-primary/60 hover:bg-gold-primary/20 transition-all"
-                  >
-                    {tag}
-                  </button>
-                ))}
+              <div className="space-y-2">
+                <p className="text-[8px] font-black text-gold-primary/40 uppercase tracking-[0.2em]">管家學習推薦</p>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                  {butlerTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSearchQuery(tag)}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-full bg-gold-primary/10 border border-gold-primary/30 text-[10px] font-black text-gold-primary hover:bg-gold-primary/20 transition-all shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em]">熱門搜尋</p>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                  {hotTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSearchQuery(tag)}
+                      className="flex-shrink-0 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-gray-400 hover:bg-white/10 transition-all"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {searchQuery.length > 0 && (

@@ -78,7 +78,6 @@ import ReelInfoPanel from "./components/ReelInfoPanel";
 
 // Types
 type Tab = "home" | "butler" | "plus" | "announcements" | "lounge";
-type CarouselPage = 0 | 1 | 2; // 0:個人資訊, 1:Reels影片, 2:領主櫥窗
 
 interface Product {
   id: string;
@@ -109,7 +108,6 @@ interface Store {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const [carouselIndex, setCarouselIndex] = useState<CarouselPage>(1);
   const [userId] = useState("LN-001");
   
   const initialStores: Store[] = [
@@ -263,13 +261,13 @@ export default function App() {
     if (forceVisible) setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     
-    // 非影片區強制顯示且不啟動計時器
-    if (activeTab !== "home" || carouselIndex !== 1) {
+    // 非首頁不啟動計時器
+    if (activeTab !== "home") {
       setIsUiVisible(true);
       return;
     }
 
-    // 只有在首頁影片區 (carouselIndex === 1) 才啟動自動隱身
+    // 啟動自動隱身
     stealthTimerRef.current = setTimeout(() => {
       // 完善沉浸式隱身計時器：暫停時或搜尋展開時不准躲起來
       if (!isPaused && !isSearchExpanded) {
@@ -283,7 +281,7 @@ export default function App() {
     return () => {
       if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     };
-  }, [isPaused, isSearchExpanded, activeTab, carouselIndex]);
+  }, [isPaused, isSearchExpanded, activeTab]);
 
   const updateWeights = (tags: string[]) => {
     setInterestWeights(prev => {
@@ -467,24 +465,8 @@ export default function App() {
       setLongPressActive(false);
     }
 
-    // 左右滑動手勢導航 - 僅在 Reel 影片分頁有效
-    if (activeTab === "home" && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
-      if (dx > 50) {
-        // 由左往右滑：索引減 1 (無限循環)
-        setCarouselIndex(prev => ((prev - 1 + 3) % 3) as CarouselPage);
-      } else if (dx < -50) {
-        // 由右往左滑：索引加 1 (無限循環)
-        setCarouselIndex(prev => ((prev + 1) % 3) as CarouselPage);
-      }
-      if (clickTimer.current) {
-        clearTimeout(clickTimer.current);
-        clickTimer.current = null;
-      }
-      clickCount.current = 0;
-      setLongPressActive(false);
-      return;
-    }
-
+    // 左右滑動手勢導航 - 已移除
+    
     // 如果位移過大，視為滑動而非點擊
     if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
       if (clickTimer.current) {
@@ -534,7 +516,7 @@ export default function App() {
 
         {/* Navigation Row - Only visible in Home tab and when UI is visible */}
         <AnimatePresence>
-          {activeTab === "home" && isUiVisible && carouselIndex === 1 && (
+          {activeTab === "home" && isUiVisible && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -607,198 +589,163 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="relative h-dvh w-full overflow-hidden"
             >
-              {/* Horizontal Infinite Carousel Container */}
-              <motion.div
-                animate={{ x: `-${carouselIndex * 100}%` }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="flex h-full w-[300%] overflow-hidden"
-              >
-                {/* 0: 個人資訊 (Lounge Content) */}
-                <div className="w-1/3 h-full relative overflow-y-auto no-scrollbar bg-black/95 pt-20">
-                  <Lounge userId={userId} />
-                </div>
-
-                {/* 1: Reels 影片 (Home Content) */}
-                <div className="w-1/3 h-full snap-container overflow-y-scroll overflow-x-hidden snap-y snap-mandatory bg-black">
-                  {loading ? (
-                    <div className="h-dvh flex items-center justify-center">
-                      <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : (
-                    sortedStores.map((store) => (
+              {/* Reels 影片 (Home Content) */}
+              <div className="h-full snap-container overflow-y-scroll overflow-x-hidden snap-y snap-mandatory bg-black">
+                {loading ? (
+                  <div className="h-dvh flex items-center justify-center">
+                    <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  sortedStores.map((store) => (
+                    <div 
+                      key={store.id} 
+                      data-id={store.id}
+                      className="snap-item relative h-dvh w-full snap-start overflow-hidden pointer-events-auto"
+                      onMouseDown={(e) => handleInteractionStart(e, store)}
+                      onMouseUp={handleInteractionEnd}
+                      onTouchStart={(e) => handleInteractionStart(e, store)}
+                      onTouchEnd={handleInteractionEnd}
+                    >
+                      <VideoPlayer 
+                        src={store.video} 
+                        poster={store.image} 
+                        isActive={activeVideoId === store.id} 
+                        isPaused={isPaused && activeVideoId === store.id}
+                        muted={isUserMuted}
+                        feedbackType={activeVideoId === store.id ? feedbackType : null}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
+                      
+                      {/* Info Tags - Bottom Left - 點擊展開邏輯 */}
                       <div 
-                        key={store.id} 
-                        data-id={store.id}
-                        className="snap-item relative h-dvh w-full snap-start overflow-hidden pointer-events-auto"
-                        onMouseDown={(e) => handleInteractionStart(e, store)}
-                        onMouseUp={handleInteractionEnd}
-                        onTouchStart={(e) => handleInteractionStart(e, store)}
-                        onTouchEnd={handleInteractionEnd}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsInfoExpanded(!isInfoExpanded);
+                          resetStealthTimer();
+                        }}
+                        className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
                       >
-                        <VideoPlayer 
-                          src={store.video} 
-                          poster={store.image} 
-                          isActive={activeVideoId === store.id} 
-                          isPaused={isPaused && activeVideoId === store.id}
-                          muted={isUserMuted}
-                          feedbackType={activeVideoId === store.id ? feedbackType : null}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
-                        
-                        {/* Info Tags - Bottom Left - 點擊展開邏輯 */}
-                        <div 
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsInfoExpanded(!isInfoExpanded);
-                            resetStealthTimer();
-                          }}
-                          className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 cursor-pointer ${isUiVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-                        >
-                          {/* Minimal View (Default) */}
-                          <div className="flex flex-wrap gap-2 items-center">
-                            <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
-                              <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
-                            </div>
-                            <div 
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (store.lat && store.lng) {
-                                  const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
-                                  window.open(url, '_blank');
-                                }
-                              }}
-                              className={`flex items-center gap-1 px-2 py-0.5 backdrop-blur-md border rounded-full transition-all group ${
-                                (store.lat && store.lng) 
-                                  ? "bg-gold-primary/30 border-gold-primary/50 cursor-pointer hover:bg-gold-primary/50 shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
-                                  : "bg-white/10 border-white/10 cursor-default"
-                              }`}
-                            >
-                              <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${
-                                (store.lat && store.lng) ? "text-gold-light" : "text-white/40"
-                              }`}>
-                                {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
-                              </span>
-                            </div>
-                            {!isInfoExpanded && (
-                              <div className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-2 animate-pulse">
-                                點擊展開詳情
-                              </div>
-                            )}
+                        {/* Minimal View (Default) */}
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
+                            <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
                           </div>
-                          
-                          {/* Expanded Content */}
-                          <motion.div 
-                            initial={false}
-                            animate={{ 
-                              height: isInfoExpanded ? "auto" : 0,
-                              opacity: isInfoExpanded ? 1 : 0,
-                              marginTop: isInfoExpanded ? 8 : 0
-                            }}
-                            className="overflow-hidden space-y-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full border border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
-                                <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
-                              </div>
-                              <div>
-                                <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
-                                <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <p className="text-xs text-white/90 font-bold leading-relaxed drop-shadow-md">
-                                {store.description}
-                              </p>
-                              <div className="flex flex-wrap gap-1.5 pt-1">
-                                {store.tags.map((tag, idx) => (
-                                  <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </motion.div>
-                        </div>
-
-                        {/* Right Sidebar Interaction Chain */}
-                        <div className={`absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                          {/* Dynamic Clock/Calendar Logic - Transparent Style */}
                           <div 
+                            onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setShowOrderPanel(true);
-                              resetStealthTimer();
-                              updateWeights(store.tags);
-                            }}
-                            className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform group"
-                          >
-                            <div className="w-12 h-12 flex items-center justify-center text-gold-primary transition-all">
-                              <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                                {store.serviceMode === 'reserve' ? <Calendar size={20} strokeWidth={1.5} /> : <Clock size={20} strokeWidth={1.5} />}
-                              </div>
-                            </div>
-                            <span className="text-[9px] font-black text-gold-primary drop-shadow-md opacity-90 group-hover:opacity-100">
-                              {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
-                            </span>
-                          </div>
-
-                          <InteractionButton 
-                            icon={<Heart size={18} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
-                            label={likes.toLocaleString()} 
-                            onClick={() => {
-                              resetStealthTimer();
-                              updateWeights(store.tags);
-                              if (isLiked) {
-                                setLikes(prev => prev - 1);
-                                setIsLiked(false);
-                              } else {
-                                setLikes(prev => prev + 1);
-                                setIsLiked(true);
-                                setShowFountain(true);
-                                setTimeout(() => setShowFountain(false), 1000);
+                              if (store.lat && store.lng) {
+                                const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
+                                window.open(url, '_blank');
                               }
                             }}
-                          />
-                          <InteractionButton icon={<Coins size={18} />} label="贊助" onClick={() => { setShowSupport(true); resetStealthTimer(); updateWeights(store.tags); }} />
-                          <InteractionButton icon={<MessageSquare size={18} />} label="留言" onClick={() => { setShowComments(true); resetStealthTimer(); updateWeights(store.tags); }} />
-                          <InteractionButton icon={<Share2 size={18} />} label="分享" onClick={() => {
+                            className={`flex items-center gap-1 px-2 py-0.5 backdrop-blur-md border rounded-full transition-all group ${
+                              (store.lat && store.lng) 
+                                ? "bg-gold-primary/30 border-gold-primary/50 cursor-pointer hover:bg-gold-primary/50 shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
+                                : "bg-white/10 border-white/10 cursor-default"
+                            }`}
+                          >
+                            <span className={`text-[9px] font-bold uppercase tracking-widest transition-colors ${
+                              (store.lat && store.lng) ? "text-gold-light" : "text-white/40"
+                            }`}>
+                              {(store.lat && store.lng) ? `#距離: ${store.distance}` : "#商圈"}
+                            </span>
+                          </div>
+                          {!isInfoExpanded && (
+                            <div className="text-[9px] font-black text-white/40 uppercase tracking-widest ml-2 animate-pulse">
+                              點擊展開詳情
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Expanded Content */}
+                        <motion.div 
+                          initial={false}
+                          animate={{ 
+                            height: isInfoExpanded ? "auto" : 0,
+                            opacity: isInfoExpanded ? 1 : 0,
+                            marginTop: isInfoExpanded ? 8 : 0
+                          }}
+                          className="overflow-hidden space-y-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full border border-gold-primary overflow-hidden shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+                              <img src={store.image} alt={store.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
+                              <p className="text-[8px] text-gray-400 font-bold uppercase tracking-widest">帝國領主</p>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <p className="text-xs text-white/90 font-bold leading-relaxed drop-shadow-md">
+                              {store.description}
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {store.tags.map((tag, idx) => (
+                                <span key={idx} className="text-[8px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded border border-white/10">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.div>
+                      </div>
+
+                      {/* Right Sidebar Interaction Chain */}
+                      <div className={`absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        {/* Dynamic Clock/Calendar Logic - Transparent Style */}
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowOrderPanel(true);
                             resetStealthTimer();
                             updateWeights(store.tags);
-                            const referralCode = `LYNA-${userId}-${store.id}`;
-                            navigator.clipboard.writeText(`${window.location.origin}/?shopId=${store.id}&ref=${referralCode}`);
-                            alert(`推薦碼 ${referralCode} 已複製！連動 1% 導購分潤。`);
-                          }} />
+                          }}
+                          className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform group"
+                        >
+                          <div className="w-12 h-12 flex items-center justify-center text-gold-primary transition-all">
+                            <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                              {store.serviceMode === 'reserve' ? <Calendar size={20} strokeWidth={1.5} /> : <Clock size={20} strokeWidth={1.5} />}
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-black text-gold-primary drop-shadow-md opacity-90 group-hover:opacity-100">
+                            {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
+                          </span>
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
 
-                {/* 2: 領主櫥窗 (Info Panel Content) */}
-                <div className="w-1/3 h-full relative">
-                  {selectedStore && (
-                    <ReelInfoPanel 
-                      isOpen={carouselIndex === 2}
-                      onClose={() => setCarouselIndex(1)}
-                      type={selectedStore.type}
-                      data={{
-                        name: selectedStore.name,
-                        avatar: selectedStore.image,
-                        description: selectedStore.description,
-                        isFriendly: selectedStore.isFriendly,
-                        products: selectedStore.products || [],
-                        videos: [
-                          { id: 'v1', thumbnail: 'https://picsum.photos/seed/v1/300/400', likes: '1.2k' },
-                          { id: 'v2', thumbnail: 'https://picsum.photos/seed/v2/300/400', likes: '850' },
-                          { id: 'v3', thumbnail: 'https://picsum.photos/seed/v3/300/400', likes: '2.1k' },
-                        ]
-                      }}
-                    />
-                  )}
-                </div>
-              </motion.div>
+                        <InteractionButton 
+                          icon={<Heart size={18} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
+                          label={likes.toLocaleString()} 
+                          onClick={() => {
+                            resetStealthTimer();
+                            updateWeights(store.tags);
+                            if (isLiked) {
+                              setLikes(prev => prev - 1);
+                              setIsLiked(false);
+                            } else {
+                              setLikes(prev => prev + 1);
+                              setIsLiked(true);
+                              setShowFountain(true);
+                              setTimeout(() => setShowFountain(false), 1000);
+                            }
+                          }}
+                        />
+                        <InteractionButton icon={<Coins size={18} />} label="賞金" onClick={() => { setShowSupport(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                        <InteractionButton icon={<MessageSquare size={18} />} label="留言" onClick={() => { setShowComments(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                        <InteractionButton icon={<Share2 size={18} />} label="分享" onClick={() => {
+                          resetStealthTimer();
+                          updateWeights(store.tags);
+                          const referralCode = `LYNA-${userId}-${store.id}`;
+                          navigator.clipboard.writeText(`${window.location.origin}/?shopId=${store.id}&ref=${referralCode}`);
+                          // alert 移除，改為靜默複製或自定義 Toast
+                        }} />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </motion.div>
           )}
 

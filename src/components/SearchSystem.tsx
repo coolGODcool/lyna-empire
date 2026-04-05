@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, X, Mic, Flame, Star, MapPin, Zap, Menu } from "lucide-react";
+import { Search, X, Mic, Flame, Star, MapPin, Zap, Menu, Clock } from "lucide-react";
 
 interface SearchSystemProps {
   onExpandChange: (isExpanded: boolean) => void;
@@ -10,25 +10,9 @@ interface SearchSystemProps {
 export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSystemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [isRecording, setIsRecording] = useState(false);
+  const [history] = useState(["萊娜精品咖啡", "和牛燒肉", "威士忌吧"]);
 
-  const placeholders = [
-    "搜尋店家... 😏",
-    "搜尋子民 L-XXX",
-    "搜尋美食 #懸賞",
-    "搜尋帝國規費..."
-  ];
-
-  const butlerTags = ["#離我最近", "#發燒第一", "#生活樂趣"];
-  const hotTags = ["#美食", "#新開幕", "#高評價", "#在地空投", "#領主推薦"];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  const hotTags = ["#熱賣商品", "#發燒商品", "#領主推薦", "#精品餐飲"];
 
   const toggleExpand = () => {
     const nextState = !isExpanded;
@@ -57,7 +41,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
             animate={{ width: "100%", opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="absolute left-0 top-0 h-8 flex items-center pl-8 pr-2 overflow-hidden bg-black/20 backdrop-blur-md rounded-full border border-gold-primary/10"
+            className="absolute left-0 top-0 h-8 flex items-center pl-8 pr-2 overflow-hidden bg-black/40 backdrop-blur-xl rounded-full border border-gold-primary/20"
           >
             <input
               autoFocus
@@ -69,44 +53,20 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
               autoComplete="off"
               autoCapitalize="none"
               spellCheck="false"
-              // 模擬 android:privateImeOptions="nm"
               data-private="true"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  // 執行搜尋邏輯
                   console.log("Searching for:", searchQuery);
-                  (e.target as HTMLInputElement).blur(); // 搜尋後收起鍵盤
+                  (e.target as HTMLInputElement).blur();
                 }
               }}
-              placeholder={placeholders[placeholderIndex]}
+              placeholder="搜尋"
               className="w-full bg-transparent text-[11px] font-black text-white placeholder-gold-primary/40 focus:outline-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
             />
             
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // 徹底消滅自動語音：僅手動點擊觸發
-                  if (navigator.vibrate) navigator.vibrate([50]);
-                  setIsRecording(true);
-                  
-                  // 模擬辨識過程
-                  setTimeout(() => {
-                    setIsRecording(false);
-                    const mockResults = ["萊娜精品咖啡", "五五六六和牛燒肉", "黑金流光威士忌吧"];
-                    const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-                    setSearchQuery(randomResult);
-                    if (navigator.vibrate) navigator.vibrate([10]);
-                  }, 2000);
-                }}
-                className={`p-1.5 rounded-full transition-all select-none touch-callout-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] ${
-                  isRecording ? "bg-red-500 text-white animate-pulse scale-110" : "text-gold-primary/80 hover:text-gold-primary"
-                }`}
-              >
-                <Mic size={16} strokeWidth={1.5} />
-              </button>
               <button
                 onClick={toggleExpand}
                 className="text-gold-primary/40 hover:text-gold-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
@@ -115,35 +75,36 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
               </button>
             </div>
 
-            {/* Results Dropdown */}
+            {/* Results Dropdown - YouTube Style Minimalist */}
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute top-full left-0 w-full bg-black/90 backdrop-blur-3xl border-x border-b border-gold-primary/10 rounded-b-2xl p-4 space-y-4 shadow-2xl"
+              className="absolute top-full left-0 w-full bg-black/95 backdrop-blur-3xl border-x border-b border-gold-primary/10 rounded-b-2xl p-5 space-y-6 shadow-2xl"
             >
-              <div className="space-y-2">
-                <p className="text-[8px] font-black text-gold-primary/40 uppercase tracking-[0.2em]">管家學習推薦</p>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                  {butlerTags.map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => setSearchQuery(tag)}
-                      className="flex-shrink-0 px-3 py-1.5 rounded-full bg-gold-primary/10 border border-gold-primary/30 text-[10px] font-black text-gold-primary hover:bg-gold-primary/20 transition-all shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+              <div className="space-y-3">
+                <p className="text-[9px] font-black text-gold-primary/50 uppercase tracking-[0.2em]">歷史紀錄</p>
+                <div className="flex flex-col gap-2">
+                  {history.map((item, idx) => (
+                    <div 
+                      key={idx}
+                      onClick={() => setSearchQuery(item)}
+                      className="flex items-center gap-3 text-[11px] text-gray-300 hover:text-gold-primary transition-colors cursor-pointer py-1"
                     >
-                      {tag}
-                    </button>
+                      <Clock size={12} className="text-gray-600" />
+                      <span>{item}</span>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em]">熱門搜尋</p>
+              <div className="space-y-3">
+                <p className="text-[9px] font-black text-gold-primary/50 uppercase tracking-[0.2em]">熱門探索</p>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar">
                   {hotTags.map((tag) => (
                     <button
                       key={tag}
                       onClick={() => setSearchQuery(tag)}
-                      className="flex-shrink-0 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-bold text-gray-400 hover:bg-white/10 transition-all"
+                      className="flex-shrink-0 px-4 py-2 rounded-xl bg-gold-primary/5 border border-gold-primary/20 text-[10px] font-black text-gold-primary hover:bg-gold-primary/10 transition-all active:scale-95"
                     >
                       {tag}
                     </button>
@@ -152,7 +113,7 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
               </div>
 
               {searchQuery.length > 0 && (
-                <div className="space-y-2 max-h-[30vh] overflow-y-auto no-scrollbar">
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto no-scrollbar pt-2 border-t border-white/5">
                   {[
                     { id: "1", name: "萊娜精品咖啡", type: "精品餐飲", dist: "0.8km" },
                     { id: "2", name: "五五六六和牛燒肉", type: "頂級美食", dist: "1.2km" }
@@ -163,40 +124,21 @@ export default function SearchSystem({ onExpandChange, onStoreSelect }: SearchSy
                         onStoreSelect(result.id);
                         toggleExpand();
                       }}
-                      className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 hover:border-gold-primary/30 transition-all cursor-pointer group"
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-gold-primary/30 transition-all cursor-pointer group"
                     >
-                      <div className="flex items-center gap-2">
-                        <Zap size={12} className="text-gold-primary" />
+                      <div className="flex items-center gap-3">
+                        <Zap size={14} className="text-gold-primary" />
                         <div>
-                          <p className="text-[10px] font-black text-white group-hover:text-gold-primary transition-colors">{result.name}</p>
+                          <p className="text-[11px] font-black text-white group-hover:text-gold-primary transition-colors">{result.name}</p>
                           <p className="text-[8px] text-gray-500 font-bold uppercase">{result.type}</p>
                         </div>
                       </div>
-                      <p className="text-[8px] font-mono text-gold-primary/60">{result.dist}</p>
+                      <p className="text-[9px] font-mono text-gold-primary/60">{result.dist}</p>
                     </div>
                   ))}
                 </div>
               )}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Recording Overlay */}
-      <AnimatePresence>
-        {isRecording && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-md flex items-center justify-center pointer-events-none"
-          >
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center animate-pulse">
-                <Mic size={32} className="text-red-500" />
-              </div>
-              <p className="text-sm font-black text-white italic tracking-tighter">帝國語音辨識中...</p>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

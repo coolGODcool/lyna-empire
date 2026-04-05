@@ -98,6 +98,8 @@ interface Store {
   queueTime: string;
   tags: string[];
   serviceMode: 'mixed' | 'order' | 'reserve';
+  lat: number;
+  lng: number;
 }
 
 export default function App() {
@@ -117,7 +119,9 @@ export default function App() {
       sales: "2.5K",
       queueTime: "10min",
       tags: ["#高雄", "#鼓山區", "#精品餐飲", "#評價: 9.9"],
-      serviceMode: 'mixed'
+      serviceMode: 'mixed',
+      lat: 22.6593,
+      lng: 120.2930
     },
     { 
       id: "2", 
@@ -131,7 +135,9 @@ export default function App() {
       sales: "1.2K",
       queueTime: "25min",
       tags: ["#高雄", "#前鎮區", "#和牛", "#評價: 9.7"],
-      serviceMode: 'order'
+      serviceMode: 'order',
+      lat: 22.6050,
+      lng: 120.3050
     },
     { 
       id: "3", 
@@ -145,7 +151,9 @@ export default function App() {
       sales: "0.8K",
       queueTime: "5min",
       tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
-      serviceMode: 'reserve'
+      serviceMode: 'reserve',
+      lat: 22.6250,
+      lng: 120.3020
     },
     { 
       id: "4", 
@@ -159,7 +167,9 @@ export default function App() {
       sales: "1.5K",
       queueTime: "15min",
       tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
-      serviceMode: 'reserve'
+      serviceMode: 'reserve',
+      lat: 22.6750,
+      lng: 120.3010
     },
     { 
       id: "5", 
@@ -173,7 +183,9 @@ export default function App() {
       sales: "0.5K",
       queueTime: "預約制",
       tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
-      serviceMode: 'mixed'
+      serviceMode: 'mixed',
+      lat: 22.6300,
+      lng: 120.3000
     }
   ];
 
@@ -215,6 +227,7 @@ export default function App() {
     setIsUiVisible(true);
     if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
     stealthTimerRef.current = setTimeout(() => {
+      // 完善沉浸式隱身計時器：暫停時不准躲起來
       if (!isPaused) {
         setIsUiVisible(false);
       }
@@ -458,13 +471,17 @@ export default function App() {
             className="absolute top-0 left-0 h-full liquid-gold shadow-[0_0_20px_rgba(212,175,55,0.6)]"
           />
           
-          {/* Text Overlay - Large & Prestigious */}
-          <div className={`absolute inset-0 flex items-center justify-center px-6 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
-            <div className="flex items-center gap-3 py-1">
-              <Sparkles size={14} className="text-gold-light animate-pulse" />
-              <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)] leading-none">
-                本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M
-              </span>
+          {/* Text Overlay - Scrolling Marquee (Full Width) */}
+          <div className={`absolute inset-0 flex items-center justify-center px-20 pointer-events-none transition-all duration-500 ${isSearchExpanded ? 'opacity-0 translate-x-20' : 'opacity-100'}`}>
+            <div className="w-full overflow-hidden">
+              <div className="whitespace-nowrap animate-marquee flex gap-8">
+                <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)] leading-none">
+                  本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M | 領主 5566 補貼中 🏛️
+                </span>
+                <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] drop-shadow-[0_2px_10px_rgba(212,175,55,0.3)] leading-none">
+                  本季結算 {quarterlyProgress}% | 帝國累計 ${(charityPool / 1000000).toFixed(1)}M | 領主 5566 補貼中 🏛️
+                </span>
+              </div>
             </div>
           </div>
           
@@ -472,56 +489,48 @@ export default function App() {
           <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gold-primary/30 shadow-[0_0_15px_rgba(212,175,55,0.5)]" />
         </div>
 
-        {/* Marquee Announcement - Ticker Style (Now below Charity Pool) */}
-        <AnimatePresence>
-          {showMarquee && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="relative flex items-center overflow-hidden"
-            >
-              <div className="flex-1 bg-gold-primary/5 border-y border-gold-primary/10 py-1.5 overflow-hidden">
-                <div className="whitespace-nowrap animate-marquee flex gap-8">
-                  <span className="text-[9px] font-bold text-gold-light/60 uppercase tracking-widest">
-                    🏛️ 規費快訊：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
-                  </span>
-                  <span className="text-[9px] font-bold text-gold-light/60 uppercase tracking-widest">
-                    🏛️ 規費快訊：領主 X 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
-                  </span>
-                </div>
-              </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); setShowMarquee(false); }}
-                className="absolute right-0 bg-black/80 p-1.5 text-gold-primary/40 hover:text-gold-primary transition-colors"
-              >
-                <X size={10} />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            {/* Minimalist Menu Button */}
-            <button className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95">
-              <Menu size={18} />
-            </button>
+        <div className="flex items-center h-10 px-6 relative">
+          {/* Scrolling Marquee - match_parent equivalent */}
+          <div className="absolute inset-0 flex items-center px-16 overflow-hidden pointer-events-none">
+            <div className="whitespace-nowrap animate-marquee flex gap-10">
+              <span className="text-[11px] font-black text-gold-primary/80 uppercase tracking-[0.2em] drop-shadow-sm">
+                🏛️ 規費快訊：領主 5566 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
+              </span>
+              <span className="text-[11px] font-black text-gold-primary/80 uppercase tracking-[0.2em] drop-shadow-sm">
+                🏛️ 規費快訊：領主 5566 完成交易，8% 稅收已入庫！ ⚔️ 領主 Z 發布了新懸賞，獎金 $5,000！ 💰 國庫資產已達 $8.2M！
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Physical Play/Pause Button */}
-            <button 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setIsPaused(!isPaused);
-                (window as any).isUserPaused = !isPaused;
-                setFeedbackType(!isPaused ? 'pause' : 'play');
-                setTimeout(() => setFeedbackType(null), 500);
-              }}
-              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
-            >
-              {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
-            </button>
+
+          <div className="flex justify-between items-center w-full relative z-10 pointer-events-none">
+            <div className="flex items-center pointer-events-auto">
+              {/* Minimalist Menu Button */}
+              <button className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95">
+                <Menu size={18} />
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-3 pointer-events-auto">
+              {/* Right Control Area: [Pause/Play] [Volume] (From Left to Right) */}
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  setIsPaused(!isPaused);
+                  (window as any).isUserPaused = !isPaused;
+                  setFeedbackType(!isPaused ? 'pause' : 'play');
+                  setTimeout(() => setFeedbackType(null), 500);
+                }}
+                className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+              >
+                {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsUserMuted(!isUserMuted); }}
+                className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+              >
+                {isUserMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -575,8 +584,15 @@ export default function App() {
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
                           <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
                         </div>
-                        <div className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full">
-                          <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">#距離: {store.distance}</span>
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const url = `https://www.google.com/maps/dir/?api=1&destination=${store.lat},${store.lng}`;
+                            window.open(url, '_blank');
+                          }}
+                          className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full cursor-pointer hover:bg-gold-primary/30 transition-all group"
+                        >
+                          <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest group-hover:text-gold-primary transition-colors">#距離: {store.distance}</span>
                         </div>
                       </div>
                       

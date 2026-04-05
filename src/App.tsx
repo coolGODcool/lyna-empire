@@ -24,7 +24,10 @@ import {
   Coins,
   ShieldCheck,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Menu,
+  Pause,
+  Play
 } from "lucide-react";
 import Butler from "./components/Butler";
 import Quests from "./components/Quests";
@@ -201,11 +204,67 @@ export default function App() {
   const [feedbackType, setFeedbackType] = useState<'play' | 'pause' | null>(null);
   const [showDonationConfirm, setShowDonationConfirm] = useState(false);
   const [pendingDonationAmount, setPendingDonationAmount] = useState(0);
+  const [isUiVisible, setIsUiVisible] = useState(true);
+  const [interestWeights, setInterestWeights] = useState<Record<string, number>>({});
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+  
+  const stealthTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const videoStartTimeRef = useRef<number>(Date.now());
+
+  const resetStealthTimer = () => {
+    setIsUiVisible(true);
+    if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
+    stealthTimerRef.current = setTimeout(() => {
+      if (!isPaused) {
+        setIsUiVisible(false);
+      }
+    }, 5000);
+  };
+
+  useEffect(() => {
+    resetStealthTimer();
+    return () => {
+      if (stealthTimerRef.current) clearTimeout(stealthTimerRef.current);
+    };
+  }, [isPaused]);
+
+  const updateWeights = (tags: string[]) => {
+    setInterestWeights(prev => {
+      const next = { ...prev };
+      tags.forEach(tag => {
+        next[tag] = (next[tag] || 0) + 1;
+      });
+      return next;
+    });
+  };
 
   // 初始化全局鎖
   useEffect(() => {
     (window as any).isUserPaused = isPaused;
+    if (isPaused) setIsUiVisible(true);
   }, [isPaused]);
+
+  // 演算法追蹤：停留超過 8 秒
+  useEffect(() => {
+    videoStartTimeRef.current = Date.now();
+    const timer = setTimeout(() => {
+      const currentStore = stores.find(s => s.id === activeVideoId);
+      if (currentStore) {
+        updateWeights(currentStore.tags);
+      }
+    }, 8000);
+    setIsInfoExpanded(false); // Reset info expansion on video change
+    return () => clearTimeout(timer);
+  }, [activeVideoId]);
+
+  // 根據權重排序商店
+  const sortedStores = React.useMemo(() => {
+    return [...stores].sort((a, b) => {
+      const scoreA = a.tags.reduce((sum, tag) => sum + (interestWeights[tag] || 0), 0);
+      const scoreB = b.tags.reduce((sum, tag) => sum + (interestWeights[tag] || 0), 0);
+      return scoreB - scoreA;
+    });
+  }, [stores, interestWeights]);
 
   // 任務二：頂部「公益金季度百分比」算法 (Quarterly Progress Logic)
   const getQuarterlyProgress = () => {
@@ -255,7 +314,7 @@ export default function App() {
   }, [stores, activeTab]);
 
   const handleInteractionStart = (e: React.MouseEvent | React.TouchEvent, store: Store) => {
-    e.stopPropagation();
+    resetStealthTimer();
     const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     touchStartPos.current = { x, y };
@@ -316,17 +375,32 @@ export default function App() {
   };
 
   const handleInteractionEnd = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation();
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-    
     const x = 'changedTouches' in e ? e.changedTouches[0].clientX : (e as React.MouseEvent).clientX;
     const y = 'changedTouches' in e ? e.changedTouches[0].clientY : (e as React.MouseEvent).clientY;
     
-    const dx = Math.abs(x - touchStartPos.current.x);
-    const dy = Math.abs(y - touchStartPos.current.y);
+    const dx = x - touchStartPos.current.x;
+    const dy = y - touchStartPos.current.y;
     
+    // 左右滑動手勢導航
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx > 50) {
+        // 由左往右滑：開啟個人資訊/資產側邊欄 (Lounge)
+        setActiveTab("lounge");
+      } else if (dx < -50) {
+        // 由右往左滑：開啟領主名片/店家詳情面板 (OrderDrawer)
+        setShowOrderPanel(true);
+      }
+      if (clickTimer.current) {
+        clearTimeout(clickTimer.current);
+        clickTimer.current = null;
+      }
+      clickCount.current = 0;
+      setLongPressActive(false);
+      return;
+    }
+
     // 如果位移過大，視為滑動而非點擊
-    if (dx > 10 || dy > 10) {
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
       if (clickTimer.current) {
         clearTimeout(clickTimer.current);
         clickTimer.current = null;
@@ -359,12 +433,15 @@ export default function App() {
       className="relative h-[100dvh] w-full bg-black-deep overflow-hidden safe-area-bottom touch-manipulation select-none"
     >
       {/* CEO Header */}
-      <header className="fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px] pointer-events-auto">
+      <header className={`fixed top-0 left-0 w-full z-50 px-6 pt-1 pb-6 flex flex-col gap-4 bg-gradient-to-b from-black/80 via-black/40 to-transparent backdrop-blur-[2px] pointer-events-auto transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {/* Grand Beneficence Bar - Full Width & Date Countdown Logic */}
         <div className="mx-[-1.5rem] relative h-8 bg-white/5 backdrop-blur-md border-b border-gold-primary/10 shadow-[0_4px_30px_rgba(0,0,0,0.5)] z-[60]">
           {/* Search System - Integrated into the bar's left side */}
           <SearchSystem 
-            onExpandChange={setIsSearchExpanded}
+            onExpandChange={(expanded) => {
+              setIsSearchExpanded(expanded);
+              if (expanded) setIsUiVisible(true);
+            }}
             onStoreSelect={(id) => {
               const store = stores.find(s => s.id === id);
               if (store) {
@@ -426,33 +503,24 @@ export default function App() {
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full gold-border-glow flex items-center justify-center bg-black-matte shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-              <Crown className="text-gold-primary w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-sm font-black gold-gradient-text tracking-tighter">萊娜帝國 LYNA EMPIRE</h1>
-              <p className="text-[10px] text-gold-primary/80 font-bold uppercase tracking-widest flex items-center gap-1">
-                執行長 5566 <span className="w-1 h-1 rounded-full bg-gold-primary" /> 1.05 補貼中
-              </p>
-            </div>
+            {/* Minimalist Menu Button */}
+            <button className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95">
+              <Menu size={18} />
+            </button>
           </div>
           <div className="flex items-center gap-3">
+            {/* Physical Play/Pause Button */}
             <button 
-              onClick={(e) => { e.stopPropagation(); setIsUserMuted(!isUserMuted); }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setIsPaused(!isPaused);
+                (window as any).isUserPaused = !isPaused;
+                setFeedbackType(!isPaused ? 'pause' : 'play');
+                setTimeout(() => setFeedbackType(null), 500);
+              }}
               className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-md border border-gold-primary/30 flex items-center justify-center text-gold-primary hover:bg-gold-primary/20 transition-all active:scale-95 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
             >
-              {isUserMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); setShowBalance(!showBalance); }}
-              className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-gold-primary/30 px-3 py-1.5 rounded-full hover:bg-gold-primary/20 transition-all active:scale-95"
-            >
-              <span className="text-[10px] font-bold gold-gradient-text">
-                {showBalance ? `L-Coin: $${balance.toLocaleString()}` : "L-Coin: *****"}
-              </span>
-              <div className="text-gold-primary/60">
-                {showBalance ? <Eye size={12} /> : <EyeOff size={12} />}
-              </div>
+              {isPaused ? <Play size={18} fill="currentColor" /> : <Pause size={18} fill="currentColor" />}
             </button>
           </div>
         </div>
@@ -474,7 +542,7 @@ export default function App() {
                   <div className="w-12 h-12 border-4 border-gold-primary border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                stores.map((store) => (
+                sortedStores.map((store) => (
                   <div 
                     key={store.id} 
                     data-id={store.id}
@@ -496,62 +564,71 @@ export default function App() {
                     
                     {/* Info Tags - Bottom Left */}
                     <div 
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute bottom-32 left-6 right-24 space-y-3 pointer-events-auto z-30"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsInfoExpanded(!isInfoExpanded);
+                        resetStealthTimer();
+                      }}
+                      className={`absolute bottom-32 left-6 right-24 space-y-2 pointer-events-auto z-30 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                     >
                       <div className="flex flex-wrap gap-2 items-center">
-                        <div 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + ' 鳳山')}`);
-                          }}
-                          className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full cursor-pointer hover:bg-gold-primary/40 transition-all"
-                        >
-                          <MapPin size={10} className="text-gold-primary" />
-                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">📍 距離 1.2 KM (點擊導航)</span>
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 rounded-full">
+                          <span className="text-[9px] font-black text-gold-primary uppercase tracking-widest">#評價: {store.rating}</span>
                         </div>
                         <div className="flex items-center gap-1 px-2 py-0.5 bg-white/10 backdrop-blur-md border border-white/10 rounded-full">
-                          <Navigation size={10} className="text-white/60" />
-                          <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">抵達需 {parseInt(store.distance) * 8 || 12} 分鐘</span>
+                          <span className="text-[9px] font-bold text-white/60 uppercase tracking-widest">#距離: {store.distance}</span>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {store.tags.map((tag, idx) => (
-                          <span key={idx} className="px-2 py-0.5 bg-black/40 backdrop-blur-md border border-white/10 text-[9px] font-bold text-gold-light rounded-full">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
+                      
                       <div className="flex items-center gap-2">
-                        <h3 className="text-2xl font-black text-white drop-shadow-lg italic tracking-tighter">{store.name}</h3>
+                        <h3 className="text-xl font-black text-white drop-shadow-lg italic tracking-tighter">{store.name}</h3>
                       </div>
-                      <p className="text-xs text-gray-300 line-clamp-2 drop-shadow-md font-medium">
+                      
+                      <p className={`text-[11px] text-gray-300 drop-shadow-md font-medium transition-all duration-300 ${isInfoExpanded ? 'line-clamp-none' : 'line-clamp-1'}`}>
                         {store.description}
                       </p>
+                      
+                      {isInfoExpanded && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="pt-2 flex flex-wrap gap-2"
+                        >
+                          {store.tags.map((tag, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-black/40 backdrop-blur-md border border-white/10 text-[8px] font-bold text-gold-light rounded-full">
+                              {tag}
+                            </span>
+                          ))}
+                        </motion.div>
+                      )}
                     </div>
 
                     {/* Right Sidebar Interaction Chain */}
-                    <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20">
+                    <div className={`absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20 transition-all duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                       {/* Dynamic Clock/Calendar Logic */}
                       <div 
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowOrderPanel(true);
+                          resetStealthTimer();
+                          updateWeights(store.tags);
                         }}
                         className="flex flex-col items-center gap-1 mb-2 cursor-pointer active:scale-90 transition-transform"
                       >
-                        <div className="w-12 h-12 rounded-full bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 flex items-center justify-center text-gold-primary animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]">
-                          {store.serviceMode === 'reserve' ? <Calendar size={20} /> : <Clock size={20} />}
+                        <div className="w-10 h-10 rounded-full bg-gold-primary/20 backdrop-blur-md border border-gold-primary/40 flex items-center justify-center text-gold-primary animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                          {store.serviceMode === 'reserve' ? <Calendar size={18} /> : <Clock size={18} />}
                         </div>
-                        <span className="text-[9px] font-black text-gold-primary drop-shadow-md">
+                        <span className="text-[8px] font-black text-gold-primary drop-shadow-md">
                           {store.serviceMode === 'reserve' ? "預約制" : store.queueTime}
                         </span>
                       </div>
 
                       <InteractionButton 
-                        icon={<Heart size={22} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
+                        icon={<Heart size={18} className={isLiked ? "text-red-500 fill-red-500" : "text-white"} />} 
                         label={likes.toLocaleString()} 
                         onClick={() => {
+                          resetStealthTimer();
+                          updateWeights(store.tags);
                           if (isLiked) {
                             setLikes(prev => prev - 1);
                             setIsLiked(false);
@@ -563,9 +640,11 @@ export default function App() {
                           }
                         }}
                       />
-                      <InteractionButton icon={<Coins size={22} />} label="贊助" onClick={() => setShowSupport(true)} />
-                      <InteractionButton icon={<MessageSquare size={22} />} label="留言" onClick={() => setShowComments(true)} />
-                      <InteractionButton icon={<Share2 size={22} />} label="分享" onClick={() => {
+                      <InteractionButton icon={<Coins size={18} />} label="贊助" onClick={() => { setShowSupport(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                      <InteractionButton icon={<MessageSquare size={18} />} label="留言" onClick={() => { setShowComments(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                      <InteractionButton icon={<Share2 size={18} />} label="分享" onClick={() => {
+                        resetStealthTimer();
+                        updateWeights(store.tags);
                         const referralCode = `LYNA-${userId}-${store.id}`;
                         navigator.clipboard.writeText(`${window.location.origin}/?shopId=${store.id}&ref=${referralCode}`);
                         alert(`推薦碼 ${referralCode} 已複製！連動 1% 導購分潤。`);
@@ -799,7 +878,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Navigation Bar - 精緻模式 */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 px-6 py-6 bg-gradient-to-t from-black to-transparent">
+      <nav className={`fixed bottom-0 left-0 w-full z-50 px-6 py-6 bg-gradient-to-t from-black to-transparent transition-opacity duration-700 ${isUiVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="glass-card flex justify-between items-center px-8 py-3 border-gold-primary/20">
           <NavIcon 
             icon={<LynaLIcon active={activeTab === "home"} />} 
@@ -854,11 +933,11 @@ function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, la
           e.stopPropagation();
           onClick?.(e);
         }}
-        className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:gold-flow-bg group-hover:text-black transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.05)]"
+        className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white group-hover:gold-flow-bg group-hover:text-black transition-all cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.05)]"
       >
         {icon}
       </div>
-      <span className="text-[10px] font-bold text-white drop-shadow-md opacity-80 group-hover:opacity-100">{label}</span>
+      <span className="text-[9px] font-bold text-white drop-shadow-md opacity-80 group-hover:opacity-100">{label}</span>
     </div>
   );
 }

@@ -213,17 +213,20 @@ export default function SupportPanel({ isOpen, onClose, onConfirm, initialAmount
                           <input
                             ref={inputRef}
                             type="number"
-                            inputMode="numeric"
+                            inputMode="decimal"
                             pattern="[0-9]*"
+                            autoCorrect="off"
+                            autoComplete="off"
+                            spellCheck="false"
                             value={amount}
                             onChange={(e) => setAmount(Math.max(0, parseInt(e.target.value) || 0))}
-                            className="w-40 bg-transparent text-5xl font-black font-mono gold-gradient-text text-center focus:outline-none p-0 leading-none flex items-center justify-center"
-                            style={{ lineHeight: '1', height: '100%' }}
+                            className="w-40 bg-transparent text-5xl font-black font-mono gold-gradient-text text-center focus:outline-none p-0 flex items-center justify-center"
+                            style={{ lineHeight: '60px', height: '60px' }}
                           />
                         </div>
                       ) : (
                         <div className="h-[60px] flex items-center justify-center">
-                          <span className="text-5xl font-black font-mono gold-gradient-text leading-none">{amount}</span>
+                          <span className="text-5xl font-black font-mono gold-gradient-text leading-[60px]">{amount}</span>
                         </div>
                       )}
                       <span className="text-[10px] text-gold-primary/60 font-bold tracking-[0.2em] mt-1">L-COIN</span>

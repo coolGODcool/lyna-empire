@@ -1,32 +1,15 @@
-// 萊娜帝國主應用程式，負責導航、影音流布局與核心交互邏輯。
-import React, { useState, useEffect, useRef } from "react";
+/**
+ * 模組名稱：帝國中樞 (App.tsx)
+ * 功能描述：應用程式核心入口。負責導航切換、全域狀態管理（如 L-Coin 餘額、用戶等級）、
+ * 影片饋送流（Video Feed）的渲染，以及整合所有功能面板（如評論、贊助、懸賞等）。
+ */
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  Plus, 
-  Crown, 
-  Utensils, 
-  Target,
-  Zap,
-  Scroll,
-  TrendingUp,
-  MessageSquare,
-  Heart,
-  Gift,
-  Share2,
-  Volume2,
-  VolumeX,
-  Eye,
-  EyeOff,
-  Clock,
-  X,
-  Spade,
-  Coins,
-  ShieldCheck,
-  ChevronRight,
-  Sparkles,
-  Menu,
-  Pause,
-  Play
+  Plus, Crown, Utensils, Target, Zap, Scroll, TrendingUp, MessageSquare, 
+  Heart, Gift, Share2, Volume2, VolumeX, Eye, EyeOff, Clock, X, Spade, 
+  Coins, ShieldCheck, ChevronRight, Sparkles, Menu, Pause, Play,
+  Calendar, MapPin, Navigation
 } from "lucide-react";
 import Butler from "./components/Butler";
 import Quests from "./components/Quests";
@@ -35,10 +18,8 @@ import OrderDrawer, { OrderData } from "./components/OrderDrawer";
 import BountyPanel from "./components/BountyPanel";
 import LevelUpAnimation from "./components/LevelUpAnimation";
 import VideoPlayer from "./components/VideoPlayer";
-import SupportPanel from "./components/SupportPanel";
 import CommentPanel from "./components/CommentPanel";
 import SearchSystem from "./components/SearchSystem";
-import { Calendar, MapPin, Navigation } from "lucide-react";
 
 // RPG 公告欄美學重建 - Navbar 精緻化
 function LynaLIcon({ active }: { active: boolean }) {
@@ -74,8 +55,6 @@ function LoungeIcon({ active }: { active: boolean }) {
   );
 }
 
-import ReelInfoPanel from "./components/ReelInfoPanel";
-
 // Types
 type Tab = "home" | "butler" | "plus" | "announcements" | "lounge";
 
@@ -106,143 +85,168 @@ interface Store {
   products?: Product[];
 }
 
+// 靜態商店數據移出組件，避免重複創建
+const INITIAL_STORES: Store[] = [
+  { 
+    id: "1", 
+    name: "萊娜精品咖啡 (旗艦店)", 
+    description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
+    image: "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80",
+    video: "/assets/videos/v1.mp4",
+    category: "精品餐飲",
+    rating: 9.9,
+    distance: "0.8 KM",
+    sales: "2.5K",
+    queueTime: "10min",
+    tags: ["#高雄區", "#咖啡廳", "#寵物友善", "#評價: 9.9"],
+    serviceMode: 'mixed',
+    lat: 22.6593,
+    lng: 120.2930,
+    isFriendly: true,
+    type: 'merchant',
+    products: [
+      { id: 'p1', name: '帝國黑金咖啡豆', price: 1200, image: 'https://picsum.photos/seed/coffee/200/200' },
+      { id: 'p2', name: '萊娜手工餅乾', price: 450, image: 'https://picsum.photos/seed/cookie/200/200' }
+    ]
+  },
+  { 
+    id: "2", 
+    name: "五五六六和牛燒肉", 
+    description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
+    image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    video: "/assets/videos/v2.mp4",
+    category: "頂級美食",
+    rating: 9.7,
+    distance: "1.2 KM",
+    sales: "1.2K",
+    queueTime: "25min",
+    tags: ["#高雄區", "#燒肉", "#和牛", "#評價: 9.7"],
+    serviceMode: 'order',
+    lat: 22.6050,
+    lng: 120.3050,
+    type: 'merchant',
+    products: [
+      { id: 'p3', name: 'A5 和牛拼盤', price: 3800, image: 'https://picsum.photos/seed/beef/200/200' }
+    ]
+  },
+  { 
+    id: "3", 
+    name: "黑金流光威士忌吧", 
+    description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
+    image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80",
+    video: "/assets/videos/v1.mp4",
+    category: "夜生活",
+    rating: 9.5,
+    distance: "2.5 KM",
+    sales: "0.8K",
+    queueTime: "5min",
+    tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
+    serviceMode: 'reserve',
+    lat: 22.6250,
+    lng: 120.3020,
+    type: 'merchant'
+  },
+  { 
+    id: "4", 
+    name: "帝國極限體能館", 
+    description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
+    image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
+    video: "/assets/videos/v2.mp4",
+    category: "運動健身",
+    rating: 9.2,
+    distance: "3.0 KM",
+    sales: "1.5K",
+    queueTime: "15min",
+    tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
+    serviceMode: 'reserve',
+    lat: 22.6750,
+    lng: 120.3010,
+    type: 'merchant'
+  },
+  { 
+    id: "5", 
+    name: "LN-001 專屬訂製西服", 
+    description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
+    image: "https://images.unsplash.com/photo-1594932224828-b4b057b7d6ee?auto=format&fit=crop&w=800&q=80",
+    video: "/assets/videos/v1.mp4",
+    category: "精品服飾",
+    rating: 10.0,
+    distance: "1.2 KM",
+    sales: "0.5K",
+    queueTime: "預約制",
+    tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
+    serviceMode: 'mixed',
+    lat: 22.6300,
+    lng: 120.3000,
+    type: 'merchant'
+  },
+  { 
+    id: "6", 
+    name: "子民小明", 
+    description: "熱愛帝國生活，分享我的每日穿搭與冒險。", 
+    image: "https://picsum.photos/seed/user1/200/200",
+    video: "/assets/videos/v2.mp4",
+    category: "生活分享",
+    rating: 8.5,
+    distance: "0.1 KM",
+    sales: "0",
+    queueTime: "在線",
+    tags: ["#穿搭", "#生活", "#子民"],
+    serviceMode: 'mixed',
+    lat: 22.6000,
+    lng: 120.3000,
+    type: 'user'
+  }
+];
+// Navigation Icon Wrapper
+function NavIcon({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) {
+  return (
+    <button 
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`flex flex-col items-center gap-1 transition-all duration-300 active:scale-95 ${active ? 'scale-110' : 'opacity-60 grayscale hover:opacity-100 hover:grayscale-0'}`}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// Interaction Button Component
+function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick: () => void }) {
+  return (
+    <button 
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="flex flex-col items-center gap-1 group active:scale-90 transition-transform"
+    >
+      <div className="w-12 h-12 rounded-full bg-black/20 backdrop-blur-md border border-white/10 flex items-center justify-center text-white transition-all group-hover:bg-gold-primary/20 group-hover:border-gold-primary/40 shadow-lg">
+        <div className="transform transition-transform group-hover:scale-110">
+          {icon}
+        </div>
+      </div>
+      <span className="text-[10px] font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase tracking-widest opacity-80 group-hover:opacity-100">
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [userId] = useState("LN-001");
-  
-  const initialStores: Store[] = [
-    { 
-      id: "1", 
-      name: "萊娜精品咖啡 (旗艦店)", 
-      description: "帝國首席烘焙師親手調製，感受黑金般的絲滑質感。", 
-      image: "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v1.mp4",
-      category: "精品餐飲",
-      rating: 9.9,
-      distance: "0.8 KM",
-      sales: "2.5K",
-      queueTime: "10min",
-      tags: ["#高雄區", "#咖啡廳", "#寵物友善", "#評價: 9.9"],
-      serviceMode: 'mixed',
-      lat: 22.6593,
-      lng: 120.2930,
-      isFriendly: true,
-      type: 'merchant',
-      products: [
-        { id: 'p1', name: '帝國黑金咖啡豆', price: 1200, image: 'https://picsum.photos/seed/coffee/200/200' },
-        { id: 'p2', name: '萊娜手工餅乾', price: 450, image: 'https://picsum.photos/seed/cookie/200/200' }
-      ]
-    },
-    { 
-      id: "2", 
-      name: "五五六六和牛燒肉", 
-      description: "執行長最愛。頂級 A5 和牛，入口即化的尊榮體驗。", 
-      image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v2.mp4",
-      category: "頂級美食",
-      rating: 9.7,
-      distance: "1.2 KM",
-      sales: "1.2K",
-      queueTime: "25min",
-      tags: ["#高雄區", "#燒肉", "#和牛", "#評價: 9.7"],
-      serviceMode: 'order',
-      lat: 22.6050,
-      lng: 120.3050,
-      type: 'merchant',
-      products: [
-        { id: 'p3', name: 'A5 和牛拼盤', price: 3800, image: 'https://picsum.photos/seed/beef/200/200' }
-      ]
-    },
-    { 
-      id: "3", 
-      name: "黑金流光威士忌吧", 
-      description: "在微醺中商議大計，這裡是領主們的秘密基地。", 
-      image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v1.mp4",
-      category: "夜生活",
-      rating: 9.5,
-      distance: "2.5 KM",
-      sales: "0.8K",
-      queueTime: "5min",
-      tags: ["#高雄", "#新興區", "#威士忌", "#評價: 9.5"],
-      serviceMode: 'reserve',
-      lat: 22.6250,
-      lng: 120.3020,
-      type: 'merchant'
-    },
-    { 
-      id: "4", 
-      name: "帝國極限體能館", 
-      description: "鍛鍊體魄，守護帝國。最先進的重訓設備與私人教練。", 
-      image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v2.mp4",
-      category: "運動健身",
-      rating: 9.2,
-      distance: "3.0 KM",
-      sales: "1.5K",
-      queueTime: "15min",
-      tags: ["#高雄", "#左營區", "#健身", "#評價: 9.2"],
-      serviceMode: 'reserve',
-      lat: 22.6750,
-      lng: 120.3010,
-      type: 'merchant'
-    },
-    { 
-      id: "5", 
-      name: "LN-001 專屬訂製西服", 
-      description: "量身打造帝國威儀。每一針一線皆展現不凡品味。", 
-      image: "https://images.unsplash.com/photo-1594932224828-b4b057b7d6ee?auto=format&fit=crop&w=800&q=80",
-      video: "/assets/videos/v1.mp4",
-      category: "精品服飾",
-      rating: 10.0,
-      distance: "1.2 KM",
-      sales: "0.5K",
-      queueTime: "預約制",
-      tags: ["#全域配送", "#訂製", "#精品", "#評價: 10.0"],
-      serviceMode: 'mixed',
-      lat: 22.6300,
-      lng: 120.3000,
-      type: 'merchant'
-    },
-    { 
-      id: "6", 
-      name: "子民小明", 
-      description: "熱愛帝國生活，分享我的每日穿搭與冒險。", 
-      image: "https://picsum.photos/seed/user1/200/200",
-      video: "/assets/videos/v2.mp4",
-      category: "生活分享",
-      rating: 8.5,
-      distance: "0.1 KM",
-      sales: "0",
-      queueTime: "在線",
-      tags: ["#穿搭", "#生活", "#子民"],
-      serviceMode: 'mixed',
-      lat: 22.6000,
-      lng: 120.3000,
-      type: 'user'
-    }
-  ];
-
-  const [stores, setStores] = useState<Store[]>(initialStores);
-  const [loading, setLoading] = useState(false);
+  const [stores] = useState<Store[]>(INITIAL_STORES);
   const [showBounty, setShowBounty] = useState(false);
   const [showOrderPanel, setShowOrderPanel] = useState(false);
-  const [showSupport, setShowSupport] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [showMarquee, setShowMarquee] = useState(true);
-  const [fixNavbar, setFixNavbar] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [longPressActive, setLongPressActive] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<Store | null>(initialStores[0]);
-  const [isShopRedirect, setIsShopRedirect] = useState(false);
-  const [likes, setLikes] = useState(995); // Start near threshold
+  const [selectedStore, setSelectedStore] = useState<Store | null>(INITIAL_STORES[0]);
+  const [likes, setLikes] = useState(995);
   const [isLiked, setIsLiked] = useState(false);
-  const [trustScore, setTrustScore] = useState(79); // Start near threshold
+  const [trustScore] = useState(79);
   const [balance, setBalance] = useState(24500);
-  const [charityPool, setCharityPool] = useState(8200000); // 8.2M
-  const [lastDonatedAmount, setLastDonatedAmount] = useState(10);
+  const [charityPool, setCharityPool] = useState(8200000);
   const [showPlusPanel, setShowPlusPanel] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>("1");
   const [showFountain, setShowFountain] = useState(false);
@@ -250,13 +254,17 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [feedbackType, setFeedbackType] = useState<'play' | 'pause' | null>(null);
-  const [showDonationConfirm, setShowDonationConfirm] = useState(false);
-  const [pendingDonationAmount, setPendingDonationAmount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [fixNavbar, setFixNavbar] = useState(false);
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [interestWeights, setInterestWeights] = useState<Record<string, number>>({});
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isGameActive, setIsGameActive] = useState(false);
   
+  // 沉浸式場景判定：贊助/點餐、遊戲對局、選單開啟、評論展開、懸賞面板
+  const isPanelOpen = showOrderPanel || showComments || showBounty || isMenuOpen || isGameActive;
+
   const stealthTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoStartTimeRef = useRef<number>(Date.now());
 
@@ -527,14 +535,14 @@ export default function App() {
                 transition={{ type: "spring", damping: 20, stiffness: 200 }}
                 className="w-full flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px] relative"
               >
-                {/* 龍紋背景 */}
+                {/* 聖旨龍紋背景 */}
                 <div className="absolute inset-0 marquee-dragon-bg" />
                 
                 <div className="whitespace-nowrap animate-marquee flex gap-12 relative z-10">
-                <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                <span className="text-[11px] font-black text-black uppercase tracking-[0.2em] drop-shadow-[0_0_5px_rgba(138,43,226,0.8)]">
                   本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
                 </span>
-                <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                <span className="text-[11px] font-black text-black uppercase tracking-[0.2em] drop-shadow-[0_0_5px_rgba(138,43,226,0.8)]">
                   本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
                 </span>
               </div>
@@ -607,7 +615,7 @@ export default function App() {
       </header>
 
       {/* Main Content Area - 強制透明度為 1 避免黑屏 */}
-      <main className="h-full w-full pb-[120px]" style={{ opacity: 1 }}>
+      <main className={`h-full w-full transition-all duration-300 ${isPanelOpen ? 'pb-[env(safe-area-inset-bottom,20px)]' : 'pb-[120px]'}`} style={{ opacity: 1 }}>
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div 
@@ -755,7 +763,7 @@ export default function App() {
                             }
                           }}
                         />
-                        <InteractionButton icon={<Coins size={18} />} label="賞金" onClick={() => { setShowSupport(true); resetStealthTimer(); updateWeights(store.tags); }} />
+                        <InteractionButton icon={<Coins size={18} />} label="贊助" onClick={() => { setShowOrderPanel(true); resetStealthTimer(); updateWeights(store.tags); }} />
                         <InteractionButton icon={<MessageSquare size={18} />} label="留言" onClick={() => { setShowComments(true); resetStealthTimer(); updateWeights(store.tags); }} />
                         <InteractionButton icon={<Share2 size={18} />} label="分享" onClick={() => {
                           resetStealthTimer();
@@ -786,7 +794,7 @@ export default function App() {
 
           {activeTab === "lounge" && (
             <motion.div key="lounge" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="pt-24 h-full overflow-y-auto">
-              <Lounge userId={userId} />
+              <Lounge userId={userId} onGameToggle={setIsGameActive} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -800,81 +808,6 @@ export default function App() {
         onConfirm={handleOrderConfirm}
         pricePerUnit={150}
       />
-
-      {/* Support Panel */}
-      <SupportPanel 
-        isOpen={showSupport}
-        onClose={() => setShowSupport(false)}
-        initialAmount={lastDonatedAmount}
-        onConfirm={(amount) => {
-          setPendingDonationAmount(amount);
-          setShowDonationConfirm(true);
-          setShowSupport(false);
-        }}
-      />
-
-      {/* Donation Double Confirmation Modal */}
-      <AnimatePresence>
-        {showDonationConfirm && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-center justify-center px-6 bg-black/60 backdrop-blur-md"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="w-full max-w-sm bg-black-matte border border-gold-primary/30 rounded-[2rem] p-8 space-y-6 shadow-[0_0_50px_rgba(212,175,55,0.2)]"
-            >
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 rounded-full bg-gold-primary/10 flex items-center justify-center mx-auto mb-4 border border-gold-primary/20">
-                  <ShieldCheck className="text-gold-primary w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-black text-white italic tracking-tighter">金融安全二次確認</h3>
-                <p className="text-sm text-gray-400 font-bold">確定要支持 <span className="text-gold-primary">{pendingDonationAmount} L-Coin</span> 嗎？😏</p>
-              </div>
-
-              <div className="bg-white/5 rounded-2xl p-4 space-y-2 border border-white/5">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                  <span className="text-gray-500">內含國庫規費 (8%)</span>
-                  <span className="text-gold-primary/60">{(pendingDonationAmount * 0.08).toFixed(1)} L</span>
-                </div>
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                  <span className="text-gray-500">公益金撥款 (1%)</span>
-                  <span className="text-gold-primary/60">{(pendingDonationAmount * 0.01).toFixed(1)} L</span>
-                </div>
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                  <span className="text-gray-500">影片主分潤 (1%)</span>
-                  <span className="text-gold-primary/60">{(pendingDonationAmount * 0.01).toFixed(1)} L</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button 
-                  onClick={() => setShowDonationConfirm(false)}
-                  className="flex-1 py-4 rounded-xl bg-white/5 text-gray-400 font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
-                >
-                  取消
-                </button>
-                <button 
-                  onClick={() => {
-                    setBalance(prev => prev - pendingDonationAmount);
-                    setCharityPool(prev => prev + pendingDonationAmount * 0.01);
-                    setLastDonatedAmount(pendingDonationAmount);
-                    setShowDonationConfirm(false);
-                    // Trigger success feedback
-                  }}
-                  className="flex-1 py-4 rounded-xl bg-gold-primary text-black font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(212,175,55,0.3)] active:scale-95 transition-all"
-                >
-                  確定贊助
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Comment Panel */}
       <CommentPanel 
@@ -1030,8 +963,8 @@ export default function App() {
       </AnimatePresence>
 
       {/* Navigation Bar - 去框化懸浮模式 - 絕對顯示 */}
-      <nav className={`fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto transition-all duration-700 ${(isUiVisible || fixNavbar) && !isKeyboardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-        <div className="flex justify-between items-center w-full">
+      <nav className={`fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto transition-all duration-300 ${!isKeyboardVisible && !isPanelOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+        <div className="flex justify-between items-center w-full pb-[env(safe-area-inset-bottom)]">
           <NavIcon 
             icon={<LynaLIcon active={activeTab === "home"} />} 
             active={activeTab === "home"} 
@@ -1068,52 +1001,3 @@ export default function App() {
   );
 }
 
-function NavIcon({ icon, active, onClick }: { icon: React.ReactNode, active: boolean, onClick: () => void }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`p-2 transition-all duration-300 ${active ? 'scale-125 text-gold-primary drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]' : 'text-white/60 hover:text-white hover:opacity-100'}`}
-    >
-      <div className="transform transition-transform">
-        {icon}
-      </div>
-    </button>
-  );
-}
-
-function InteractionButton({ icon, label, onClick }: { icon: React.ReactNode, label: string, onClick?: (e: React.MouseEvent) => void }) {
-  return (
-    <div className="flex flex-col items-center gap-1 group">
-      <div 
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick?.(e);
-        }}
-        className="w-12 h-12 flex items-center justify-center text-white transition-all cursor-pointer active:scale-90"
-      >
-        <div className="transform transition-transform group-hover:scale-110 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-          {icon}
-        </div>
-      </div>
-      <span className="text-[9px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] opacity-90 group-hover:opacity-100">{label}</span>
-    </div>
-  );
-}
-
-function MarketRow({ price, status, color }: { price: string, status: string, color: string }) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-white/5">
-      <span className="text-xs font-mono text-white">{price}</span>
-      <span className={`text-[10px] font-bold ${color}`}>{status}</span>
-    </div>
-  );
-}
-
-function TimeSlot({ day, time }: { day: string, time: string }) {
-  return (
-    <div className="bg-white/5 border border-white/10 p-3 rounded-xl text-center hover:border-gold-primary transition-all cursor-pointer hover:bg-gold-primary/5">
-      <p className="text-[10px] text-gray-500">{day}</p>
-      <p className="text-sm font-black text-white font-mono">{time}</p>
-    </div>
-  );
-}

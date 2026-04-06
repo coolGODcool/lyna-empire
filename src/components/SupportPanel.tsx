@@ -15,10 +15,14 @@ export default function SupportPanel({ isOpen, onClose, onConfirm, initialAmount
   const [isCustom, setIsCustom] = useState(false);
   const [showCoins, setShowCoins] = useState(false);
   const [offsetY, setOffsetY] = useState(0);
+  const [showRelationSelector, setShowRelationSelector] = useState(false);
+  const [selectedRelation, setSelectedRelation] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  
   const inputRef = React.useRef<HTMLInputElement>(null);
   const holdTimer = React.useRef<NodeJS.Timeout | null>(null);
   const holdInterval = React.useRef<NodeJS.Timeout | null>(null);
-  const accelerationTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = React.useRef<number>(0);
 
   const quickAmounts = [5, 10, 50];
 
@@ -66,29 +70,34 @@ export default function SupportPanel({ isOpen, onClose, onConfirm, initialAmount
     handleAdjust(delta);
     if (navigator.vibrate) navigator.vibrate(5);
     
-    let currentInterval = 150;
+    startTimeRef.current = Date.now();
     
     holdTimer.current = setTimeout(() => {
       const runInterval = () => {
+        const elapsed = Date.now() - startTimeRef.current;
         handleAdjust(delta);
         if (navigator.vibrate) navigator.vibrate(5);
         
-        // Accelerate
-        if (currentInterval > 50) {
-          currentInterval -= 10;
-          if (holdInterval.current) clearInterval(holdInterval.current);
-          holdInterval.current = setInterval(runInterval, currentInterval);
+        // 贊助金額長按調速邏輯
+        let nextInterval = 200; // 預設速度
+        if (elapsed < 1000) {
+          nextInterval = 500; // 前 1 秒保持慢速
+        } else if (elapsed > 2000) {
+          nextInterval = 100; // 按住超過 2 秒後進入中速模式
         }
+
+        if (holdInterval.current) clearInterval(holdInterval.current);
+        holdInterval.current = setInterval(runInterval, nextInterval);
       };
       
-      holdInterval.current = setInterval(runInterval, currentInterval);
+      holdInterval.current = setInterval(runInterval, 500);
     }, 500);
   };
 
   const stopHold = () => {
     if (holdTimer.current) clearTimeout(holdTimer.current);
     if (holdInterval.current) clearInterval(holdInterval.current);
-    if (accelerationTimer.current) clearTimeout(accelerationTimer.current);
+    startTimeRef.current = 0;
   };
 
   const setFixedAmount = (val: number) => {
@@ -157,6 +166,50 @@ export default function SupportPanel({ isOpen, onClose, onConfirm, initialAmount
             </div>
 
             <div className="p-6 space-y-8">
+              {/* Relationship Selector */}
+              <div className="space-y-4">
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">送禮對象 (帝國家譜)</p>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                  {[
+                    { id: 'gf', label: '女友', msg: '親愛的，這個一定要吃看看，我特地為妳點的 ❤️' },
+                    { id: 'bf', label: '男友', msg: '兄弟，這份好料算我的，補一下！ 💪' },
+                    { id: 'mom', label: '媽媽', msg: '媽，辛苦了，這份帝國精選給您嚐嚐 🌹' },
+                    { id: 'bro', label: '好兄弟', msg: '老鐵，帝國大餐來了，下次換你請！ 🍻' }
+                  ].map((rel) => (
+                    <button
+                      key={rel.id}
+                      onClick={() => {
+                        setSelectedRelation(rel.id);
+                        setMessage(rel.msg);
+                        triggerCoinDrop();
+                      }}
+                      className={`flex-shrink-0 px-4 py-2 rounded-xl border transition-all text-[11px] font-black ${
+                        selectedRelation === rel.id 
+                          ? "bg-gold-primary text-black border-gold-primary shadow-[0_0_10px_rgba(212,175,55,0.4)]" 
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:border-white/20"
+                      }`}
+                    >
+                      {rel.label}
+                    </button>
+                  ))}
+                </div>
+                
+                {selectedRelation && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-gold-primary/5 border border-gold-primary/20 rounded-2xl"
+                  >
+                    <textarea 
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="輸入祝福語..."
+                      className="w-full bg-transparent text-xs text-gold-primary/80 font-bold focus:outline-none resize-none h-12"
+                    />
+                  </motion.div>
+                )}
+              </div>
+
               {/* Quick Amounts */}
               <div className="grid grid-cols-4 gap-2">
                 {quickAmounts.map((amt) => (

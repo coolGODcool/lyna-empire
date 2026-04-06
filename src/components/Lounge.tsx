@@ -1,3 +1,8 @@
+// 領主交誼廳，提供社交互動與即時資訊分享。
+/**
+ * 模組名稱：帝國交誼廳 (Lounge.tsx)
+ * 功能描述：社交與數據展示區。包含限領主進入的「戰爭指揮室」以及「E-Card 競技場」的入口。
+ */
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -21,15 +26,21 @@ import AuctionHouse from "./AuctionHouse";
 
 interface LoungeProps {
   userId?: string;
+  onGameToggle?: (active: boolean) => void;
 }
 
 // RPG 戰情室 & 交誼廳美學重構
-export default function Lounge({ userId = "User_001" }: LoungeProps) {
+export default function Lounge({ userId = "User_001", onGameToggle }: LoungeProps) {
   // 權限判斷：CEO (LN-001) 或 領主 (Lord_xxx)
   const isCEOOrLord = userId === "LN-001" || userId.startsWith("Lord");
   
-  const [showGame, setShowGame] = useState(false);
-  const [showAuction, setShowAuction] = useState(false);
+  const [showGame, setShowGame] = React.useState(false);
+  const [showAuction, setShowAuction] = React.useState(false);
+
+  // 當遊戲狀態改變時通知父組件
+  React.useEffect(() => {
+    onGameToggle?.(showGame);
+  }, [showGame, onGameToggle]);
   const [warRoomData] = useState({
     todayVolume: 284500,
     activeCitizens: 1240,

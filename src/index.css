@@ -227,6 +227,49 @@
   animation: marquee 20s linear infinite;
 }
 
+/* 聖旨級跑馬燈背景 */
+.marquee-dragon-bg {
+  background-image: url('/assets/ui/dragon-pattern.png');
+  background-repeat: repeat;
+  background-size: contain;
+  opacity: 0.15;
+}
+
+/* 三大身分標籤微光特效 */
+@keyframes glow-gold {
+  0%, 100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.4); border-color: rgba(212, 175, 55, 0.4); }
+  50% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.8); border-color: rgba(212, 175, 55, 1); }
+}
+
+@keyframes glow-silver-blue {
+  0%, 100% { box-shadow: 0 0 5px rgba(96, 165, 250, 0.3); border-color: rgba(96, 165, 250, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(96, 165, 250, 0.6); border-color: rgba(96, 165, 250, 0.8); }
+}
+
+@keyframes glow-ceo {
+  0%, 100% { box-shadow: 0 0 3px rgba(255, 0, 255, 0.3); border-color: rgba(255, 0, 255, 0.2); }
+  50% { box-shadow: 0 0 10px rgba(255, 0, 255, 0.6); border-color: rgba(255, 0, 255, 0.5); }
+}
+
+.glow-lord {
+  animation: glow-gold 3s ease-in-out infinite;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.glow-citizen {
+  animation: glow-silver-blue 4s ease-in-out infinite;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.glow-ceo {
+  animation: glow-ceo 2s ease-in-out infinite;
+  background: #2D004D;
+  color: black !important;
+  border: 1px solid rgba(255, 0, 255, 0.3);
+}
+
 /* Grand Beneficence Bar Styles */
 .liquid-gold {
   background: linear-gradient(

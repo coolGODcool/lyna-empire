@@ -23,6 +23,7 @@ interface CommentPanelProps {
 export default function CommentPanel({ isOpen, onClose, storeName }: CommentPanelProps) {
   const [sortBy, setSortBy] = useState<'weight' | 'time' | 'rating'>('weight');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 監聽 VisualViewport 以處理虛擬鍵盤彈出
@@ -86,19 +87,20 @@ export default function CommentPanel({ isOpen, onClose, storeName }: CommentPane
             onClick={onClose}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300]"
           />
-          <motion.div 
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            style={{ 
-              // 使用 dvh 確保在不同手機瀏覽器高度正確
-              height: '80dvh',
-              // 動態調整底部位置以避開鍵盤
-              bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px'
-            }}
-            className="fixed left-0 right-0 bg-zinc-900 border-t border-gold-primary/30 rounded-t-[2.5rem] z-[301] flex flex-col overflow-hidden"
-          >
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ 
+                y: 0,
+                height: isInputFocused ? '50dvh' : '80dvh'
+              }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              style={{ 
+                // 動態調整底部位置以避開鍵盤
+                bottom: keyboardHeight > 0 ? `${keyboardHeight}px` : '0px'
+              }}
+              className="fixed left-0 right-0 bg-zinc-900 border-t border-gold-primary/30 rounded-t-[2.5rem] z-[301] flex flex-col overflow-hidden"
+            >
             <div className="p-8 space-y-6 flex-shrink-0">
               <div className="flex justify-between items-center">
                 <div>
@@ -170,7 +172,11 @@ export default function CommentPanel({ isOpen, onClose, storeName }: CommentPane
                 ref={inputRef}
                 type="text" 
                 placeholder="發表您的帝國見解..." 
-                onBlur={handleBlur}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => {
+                  setIsInputFocused(false);
+                  handleBlur();
+                }}
                 className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-gold-primary outline-none transition-all"
                 style={{ fontSize: '16px' }} // 雙重保險確保 iOS 不縮放
               />

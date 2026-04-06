@@ -255,9 +255,22 @@ export default function App() {
   const [isUiVisible, setIsUiVisible] = useState(true);
   const [interestWeights, setInterestWeights] = useState<Record<string, number>>({});
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   
   const stealthTimerRef = useRef<NodeJS.Timeout | null>(null);
   const videoStartTimeRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handleResize = () => {
+      const viewport = window.visualViewport;
+      if (!viewport) return;
+      const offset = window.innerHeight - viewport.height;
+      setIsKeyboardVisible(offset > 100); // 閾值 100px 判斷鍵盤彈出
+    };
+    window.visualViewport.addEventListener("resize", handleResize);
+    return () => window.visualViewport?.removeEventListener("resize", handleResize);
+  }, []);
 
   const resetStealthTimer = (forceVisible = true) => {
     if (forceVisible) setIsUiVisible(true);
@@ -507,14 +520,17 @@ export default function App() {
         {/* Top Marquee - Pure Text Style, No Background - Dynamic Height */}
         <AnimatePresence initial={false}>
           {showMarquee && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 24, opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: "spring", damping: 20, stiffness: 200 }}
-              className="w-full flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px]"
-            >
-              <div className="whitespace-nowrap animate-marquee flex gap-12">
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 24, opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: "spring", damping: 20, stiffness: 200 }}
+                className="w-full flex items-center overflow-hidden pointer-events-none bg-black/10 backdrop-blur-[1px] relative"
+              >
+                {/* 龍紋背景 */}
+                <div className="absolute inset-0 marquee-dragon-bg" />
+                
+                <div className="whitespace-nowrap animate-marquee flex gap-12 relative z-10">
                 <span className="text-[11px] font-black text-gold-primary/90 uppercase tracking-[0.2em] drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
                   本季結算 {quarterlyProgress}% | 帝國公告：領主 5566 完成交易，8% 稅收已入庫！ 🏛️ 國庫資產已達 ${(charityPool / 1000000).toFixed(1)}M 🏛️
                 </span>
@@ -651,8 +667,14 @@ export default function App() {
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-black text-white italic tracking-tighter drop-shadow-md">{store.name}</h3>
                             <span className="text-white/30 text-[8px]">|</span>
-                            <span className="text-[9px] text-gold-primary/80 font-bold uppercase tracking-widest drop-shadow-md">
-                              {store.type === 'merchant' ? "帝國領主" : "帝國子民"}
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest drop-shadow-md transition-all ${
+                              userId === "LN-001" && store.id === "1" // 假設領主 001 是 CEO
+                                ? "glow-ceo" 
+                                : store.type === 'merchant' 
+                                  ? "glow-lord text-gold-primary" 
+                                  : "glow-citizen text-blue-400"
+                            }`}>
+                              {userId === "LN-001" && store.id === "1" ? "帝國 CEO" : store.type === 'merchant' ? "帝國領主" : "帝國子民"}
                             </span>
                           </div>
 
@@ -1008,7 +1030,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Navigation Bar - 去框化懸浮模式 - 絕對顯示 */}
-      <nav className={`fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto transition-all duration-700 ${(isUiVisible || fixNavbar) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+      <nav className={`fixed bottom-0 left-0 w-full z-[1000] px-8 py-10 pointer-events-auto transition-all duration-700 ${(isUiVisible || fixNavbar) && !isKeyboardVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
         <div className="flex justify-between items-center w-full">
           <NavIcon 
             icon={<LynaLIcon active={activeTab === "home"} />} 
